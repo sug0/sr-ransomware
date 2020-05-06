@@ -9,12 +9,12 @@ import (
 )
 
 // Parses a DER encoded *rsa.PrivateKey and returns it.
-func ParseDERSecretKeyRSA(data []byte) (*rsa.PrivateKey, error) {
+func ImportDERSecretKeyRSA(data []byte) (*rsa.PrivateKey, error) {
     return x509.ParsePKCS1PrivateKey(data)
 }
 
 // Parses a DER encoded *rsa.PublicKey and returns it.
-func ParseDERPublicKeyRSA(data []byte) (*rsa.PublicKey, error) {
+func ImportDERPublicKeyRSA(data []byte) (*rsa.PublicKey, error) {
     key, err := x509.ParsePKIXPublicKey(data)
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to parse RSA Public Key", err)
@@ -26,7 +26,7 @@ func ParseDERPublicKeyRSA(data []byte) (*rsa.PublicKey, error) {
 }
 
 // Parses a PEM encoded *rsa.PrivateKey and returns it.
-func ParsePEMSecretKeyRSA(data []byte) (*rsa.PrivateKey, error) {
+func ImportPEMSecretKeyRSA(data []byte) (*rsa.PrivateKey, error) {
     block, _ := pem.Decode(data)
     if block == nil {
         return nil, errNotPEM
@@ -34,11 +34,11 @@ func ParsePEMSecretKeyRSA(data []byte) (*rsa.PrivateKey, error) {
     if block.Type != "RSA PRIVATE KEY" {
         return nil, errNotRSA
     }
-    return ParseDERSecretKeyRSA(block.Bytes)
+    return ImportDERSecretKeyRSA(block.Bytes)
 }
 
 // Parses a PEM encoded *rsa.PublicKey and returns it.
-func ParsePEMPublicKeyRSA(data []byte) (*rsa.PublicKey, error) {
+func ImportPEMPublicKeyRSA(data []byte) (*rsa.PublicKey, error) {
     block, _ := pem.Decode(data)
     if block == nil {
         return nil, errNotPEM
@@ -46,5 +46,5 @@ func ParsePEMPublicKeyRSA(data []byte) (*rsa.PublicKey, error) {
     if block.Type != "PUBLIC KEY" {
         return nil, errNotPUB
     }
-    return ParseDERPublicKeyRSA(block.Bytes)
+    return ImportDERPublicKeyRSA(block.Bytes)
 }

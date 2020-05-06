@@ -12,7 +12,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    key, err := cryptoutil.ParsePEMPublicKeyRSA(data)
+    key, err := cryptoutil.ImportPEMPublicKeyRSA(data)
     if err != nil {
         panic(err)
     }
