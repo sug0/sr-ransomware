@@ -3,6 +3,8 @@ package ratelimit
 import (
     "net"
     "time"
+
+    "github.com/sug0/sr-ransomware/go/errors"
 )
 
 // Represents a rate limited net.Conn socket.
@@ -29,7 +31,8 @@ func (c *Conn) Read(p []byte) (int, error) {
         p = p[:4096]
     }
     time.Sleep(c.sleep)
-    return c.conn.Read(p)
+    n, err := c.conn.Read(p)
+    return n, errors.WrapIfNotNil(err)
 }
 
 // Implements the net.Conn interface.
@@ -38,12 +41,13 @@ func (c *Conn) Write(p []byte) (int, error) {
         p = p[:4096]
     }
     time.Sleep(c.sleep)
-    return c.conn.Write(p)
+    n, err := c.conn.Write(p)
+    return n, errors.WrapIfNotNil(err)
 }
 
 // Implements the net.Conn interface.
 func (c *Conn) Close() error {
-    return c.conn.Close()
+    return errors.WrapIfNotNil(c.conn.Close())
 }
 
 // Implements the net.Conn interface.
@@ -58,15 +62,15 @@ func (c *Conn) RemoteAddr() net.Addr {
 
 // Implements the net.Conn interface.
 func (c *Conn) SetDeadline(t time.Time) error {
-    return c.conn.SetDeadline(t)
+    return errors.WrapIfNotNil(c.conn.SetDeadline(t))
 }
 
 // Implements the net.Conn interface.
 func (c *Conn) SetReadDeadline(t time.Time) error {
-    return c.conn.SetReadDeadline(t)
+    return errors.WrapIfNotNil(c.conn.SetReadDeadline(t))
 }
 
 // Implements the net.Conn interface.
 func (c *Conn) SetWriteDeadline(t time.Time) error {
-    return c.conn.SetWriteDeadline(t)
+    return errors.WrapIfNotNil(c.conn.SetWriteDeadline(t))
 }

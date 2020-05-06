@@ -6,6 +6,8 @@ import (
     "net/url"
     "context"
     "time"
+
+    "github.com/sug0/sr-ransomware/go/errors"
 )
 
 // Instantiates a new http.Client with a ratelimit.Conn socket.
@@ -22,7 +24,7 @@ func NewHTTPClient(sleep time.Duration, proxyViaTOR bool) http.Client {
                 var d net.Dialer
                 conn, err := d.DialContext(ctx, network, addr)
                 if err != nil {
-                    return nil, err
+                    return nil, errors.Wrap(pkg, "failed to dial address", err)
                 }
                 return NewConn(conn, sleep), nil
             },
