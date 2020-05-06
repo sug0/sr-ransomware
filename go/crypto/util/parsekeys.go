@@ -34,11 +34,11 @@ func ParsePEMSecretKeyRSA(data []byte) (*rsa.PrivateKey, error) {
     if block.Type != "RSA PRIVATE KEY" {
         return nil, errNotRSA
     }
-    return ParseDERSecretKeyRSA(block.Data)
+    return ParseDERSecretKeyRSA(block.Bytes)
 }
 
 // Parses a PEM encoded *rsa.PublicKey and returns it.
-func ParsePEMPublicKeyRSA(data []byte) (*rsa.PrivateKey, error) {
+func ParsePEMPublicKeyRSA(data []byte) (*rsa.PublicKey, error) {
     block, _ := pem.Decode(data)
     if block == nil {
         return nil, errNotPEM
@@ -46,5 +46,5 @@ func ParsePEMPublicKeyRSA(data []byte) (*rsa.PrivateKey, error) {
     if block.Type != "PUBLIC KEY" {
         return nil, errNotPUB
     }
-    return ParseDERPublicKeyRSA(block.Data)
+    return ParseDERPublicKeyRSA(block.Bytes)
 }
