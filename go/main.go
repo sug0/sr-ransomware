@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-    key, err := util.ImportDERPublicKeyRSA([]byte{1,2,3,4})
+    key, err := util.ParseDERPublicKeyRSA([]byte{1,2,3,4})
     if err != nil {
         panic(err)
     }
