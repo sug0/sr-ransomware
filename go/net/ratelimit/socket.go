@@ -32,7 +32,7 @@ func (c *Conn) Read(p []byte) (int, error) {
     }
     time.Sleep(c.sleep)
     n, err := c.conn.Read(p)
-    return n, errors.WrapIfNotNil(err)
+    return n, errors.WrapIfNotNil(pkg, "read failed", err)
 }
 
 // Implements the net.Conn interface.
@@ -42,12 +42,12 @@ func (c *Conn) Write(p []byte) (int, error) {
     }
     time.Sleep(c.sleep)
     n, err := c.conn.Write(p)
-    return n, errors.WrapIfNotNil(err)
+    return n, errors.WrapIfNotNil(pkg, "write failed", err)
 }
 
 // Implements the net.Conn interface.
 func (c *Conn) Close() error {
-    return errors.WrapIfNotNil(c.conn.Close())
+    return errors.WrapIfNotNil(pkg, "close failed", c.conn.Close())
 }
 
 // Implements the net.Conn interface.
@@ -62,15 +62,15 @@ func (c *Conn) RemoteAddr() net.Addr {
 
 // Implements the net.Conn interface.
 func (c *Conn) SetDeadline(t time.Time) error {
-    return errors.WrapIfNotNil(c.conn.SetDeadline(t))
+    return errors.WrapIfNotNil(pkg, "set deadline failed", c.conn.SetDeadline(t))
 }
 
 // Implements the net.Conn interface.
 func (c *Conn) SetReadDeadline(t time.Time) error {
-    return errors.WrapIfNotNil(c.conn.SetReadDeadline(t))
+    return errors.WrapIfNotNil(pkg, "set read deadline failed", c.conn.SetReadDeadline(t))
 }
 
 // Implements the net.Conn interface.
 func (c *Conn) SetWriteDeadline(t time.Time) error {
-    return errors.WrapIfNotNil(c.conn.SetWriteDeadline(t))
+    return errors.WrapIfNotNil(pkg, "set write deadline failed", c.conn.SetWriteDeadline(t))
 }

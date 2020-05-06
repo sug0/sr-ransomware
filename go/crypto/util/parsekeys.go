@@ -10,7 +10,8 @@ import (
 
 // Parses a DER encoded *rsa.PrivateKey and returns it.
 func ImportDERSecretKeyRSA(data []byte) (*rsa.PrivateKey, error) {
-    return x509.ParsePKCS1PrivateKey(data)
+    key, err := x509.ParsePKCS1PrivateKey(data)
+    return key, errors.WrapIfNotNil(pkg, "import secret key failed", err)
 }
 
 // Parses a DER encoded *rsa.PublicKey and returns it.
