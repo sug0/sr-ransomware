@@ -11,13 +11,7 @@ import (
 )
 
 // Instantiates a new http.Client with a ratelimit.Conn socket.
-func NewHTTPClient(sleep time.Duration, proxyViaTOR bool) http.Client {
-    var proxy func(*http.Request) (*url.URL, error)
-    if proxyViaTOR {
-        const torSocksProxy = "socks5://127.0.0.1:9050"
-        proxyURL, _ := url.Parse(torSocksProxy)
-        proxy = http.ProxyURL(proxyURL)
-    }
+func NewHTTPClient(sleep time.Duration, proxyViaTor bool) http.Client {
     return http.Client{
         Transport: &http.Transport{
             DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -28,7 +22,16 @@ func NewHTTPClient(sleep time.Duration, proxyViaTOR bool) http.Client {
                 }
                 return NewConn(conn, sleep), nil
             },
-            Proxy: proxy,
+            Proxy: getTorProxy(proxyViaTor),
         },
     }
+}
+
+func getTorProxy(proxyViaTor bool) func(*http.Request) (*url.URL, error) {
+    if proxyViaTor {
+        const torSocksProxy = "socks5://127.0.0.1:9050"
+        proxyURL, _ := url.Parse(torSocksProxy)
+        return http.ProxyURL(proxyURL)
+    }
+    return nil
 }

