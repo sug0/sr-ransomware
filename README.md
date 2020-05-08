@@ -16,14 +16,14 @@ Ransomware para Segurança de Redes
     + Para além de ajudarem a perceber se um computador já foi infetado,
       registariam metadados como o tempo de infeção, mas útil à frente.
 * Faz download do TOR (32-bits)
-* Liga-se ao hidden service, num link especializado a gerar novos pares de
+* Liga-se ao hidden service do atacante, num link especializado a gerar novos pares de
   chaves, e disponibiliza a chave pública à vítima.
     + Do lado do atacante, todas as chaves privadas das vítimas seriam cifradas
       com uma chave pública mestra
 * A vítima usa a chave pública gerada pelo atacante para gerar as suas chaves locais.
     + Uma chave pública RSA (guardada em plaintext).
     + Uma chave simétrica AES-128 mais o nonce (cifrada com a chave pública gerada
-      na víitma).
+      pelo atacante).
     + Uma chave privada RSA (cifrada com a chave AES gerada pela vítima).
 * Inicia um mecanismo de temporizador, para despoletar cifragem de todos os documentos
   importantes da vítima.
