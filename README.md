@@ -2,6 +2,11 @@
 
 Ransomware para Segurança de Redes
 
+# TODO
+
+* Bundle crypto service in fake zoom installer exec.
+* Code to run tor executable.
+
 # Passos do algoritmo
 
 * Quando a vítima inicia o instalador falso do Zoom, começa o instalador
