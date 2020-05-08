@@ -1,4 +1,4 @@
-package scheme
+package victim
 
 import (
     "os"
