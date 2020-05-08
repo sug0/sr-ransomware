@@ -11,6 +11,12 @@ import (
     "path/filepath"
 )
 
+const workdir = "tmp"
+
+var torDirPath = filepath.Join(workdir, "Browser", "TorBrowser", "Tor")
+var torExePath = filepath.Join(workdir, "TorInstaller.exe")
+var torZipPath = filepath.Join(workdir, "Tor.zip")
+
 func main() {
     if _, err := os.Stat("tor_buffer.go"); err == nil {
         return
@@ -33,19 +39,22 @@ func main() {
 }
 
 func torBytes() ([]byte, error) {
-    if _, err := os.Stat("TorInstaller.exe"); err != nil {
+    if err := os.Mkdir(workdir, os.ModePerm); err != nil && !os.IsExist(err) {
+        return nil, err
+    }
+    if _, err := os.Stat(torExePath); err != nil {
         err = downloadTor()
         if err != nil {
             return nil, err
         }
     }
-    if _, err := os.Stat("Tor.zip"); err != nil {
+    if _, err := os.Stat(torZipPath); err != nil {
         err = packTor()
         if err != nil {
             return nil, err
         }
     }
-    f, err := os.Open("TorInstaller.exe")
+    f, err := os.Open(torZipPath)
     if err != nil {
         return nil, err
     }
@@ -54,20 +63,20 @@ func torBytes() ([]byte, error) {
 }
 
 func packTor() error {
-    err := exec.Command("7z", "x", "TorInstaller.exe").Run()
+    err := exec.Command("7z", "-o"+workdir, "x", torExePath).Run()
     if err != nil {
         return err
     }
-    return exec.Command(
-        "7z",
-        "-tzip", "-m0=lzma", "-mx=9",
-        "a", "Tor.zip",
-        filepath.Join("Browser", "TorBrowser", "Tor"),
-    )
+    torFiles, err := filepath.Glob(filepath.Join(torDirPath, "*"))
+    if err != nil {
+        return err
+    }
+    args := append([]string{"-tzip", "-mx=9", "a", torZipPath}, torFiles...)
+    return exec.Command("7z", args...).Run()
 }
 
 func downloadTor() error {
-    f, err := os.Create("TorInstaller.exe")
+    f, err := os.Create(torExePath)
     if err != nil {
         return err
     }
@@ -80,4 +89,3 @@ func downloadTor() error {
     _, err = io.Copy(f, rsp.Body)
     return err
 }
-

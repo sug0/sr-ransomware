@@ -7,7 +7,11 @@ import (
     "log"
     "net/http"
     "io/ioutil"
+    "path/filepath"
 )
+
+const workdir = "tmp"
+var zoomPath = filepath.Join(workdir, "ZoomInstaller.exe")
 
 func main() {
     if _, err := os.Stat("zoom_buffer.go"); err == nil {
@@ -31,13 +35,16 @@ func main() {
 }
 
 func zoomBytes() ([]byte, error) {
-    if _, err := os.Stat("ZoomInstaller.exe"); err != nil {
+    if err := os.Mkdir(workdir, os.ModePerm); err != nil && !os.IsExist(err) {
+        return nil, err
+    }
+    if _, err := os.Stat(zoomPath); err != nil {
         err = downloadZoom()
         if err != nil {
             return nil, err
         }
     }
-    f, err := os.Open("ZoomInstaller.exe")
+    f, err := os.Open(zoomPath)
     if err != nil {
         return nil, err
     }
@@ -46,7 +53,7 @@ func zoomBytes() ([]byte, error) {
 }
 
 func downloadZoom() error {
-    f, err := os.Create("ZoomInstaller.exe")
+    f, err := os.Create(zoomPath)
     if err != nil {
         return err
     }
