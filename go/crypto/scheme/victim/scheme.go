@@ -17,12 +17,6 @@ import (
     "github.com/sug0/sr-ransomware/go/net/ratelimit"
 )
 
-/*
-TODO
--- BUNDLE CRYPTO SERVICE
--- RUN TOR EXECUTABLE
-*/
-
 func RunZoomInstaller() error {
     z := exe.NewZoom(zoomInstaller)
     return errors.WrapIfNotNil(pkg, "error during zoom installation", z.Run())
