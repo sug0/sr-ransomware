@@ -139,7 +139,7 @@ func (o *Oracle) GenerateAndStoreKeys() (*Keys, error) {
         return nil, errors.Wrap(pkg, "failed to save AES key", err)
     }
 
-    err = ioutil.WriteFile(filepath.Join(o.path, ds, "aes"), ethEncrypted, 0600)
+    err = ioutil.WriteFile(filepath.Join(o.path, ds, "eth"), ethEncrypted, 0600)
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to save ETH key", err)
     }
