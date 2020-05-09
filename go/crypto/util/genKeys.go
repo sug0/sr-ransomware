@@ -21,3 +21,12 @@ func GenerateAES() ([]byte, error) {
     }
     return buf, nil
 }
+
+func GenerateIVandKeyAES() ([]byte, error) {
+    buf := make([]byte, 32)
+    _, err := io.ReadFull(rand.Reader, buf)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to read AES IV+key", err)
+    }
+    return buf, nil
+}
