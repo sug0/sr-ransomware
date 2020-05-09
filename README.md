@@ -20,7 +20,8 @@ Ransomware para Segurança de Redes
         - Se existir ficheiro, não infetar de novo.
     + Para além de ajudarem a perceber se um computador já foi infetado,
       registariam metadados como o tempo de infeção, mas útil à frente.
-* Faz download do TOR (32-bits)
+* Descompacta Tor (32-bits) do próprio executável do instalador falso
+  do Zoom.
 * Liga-se ao hidden service do atacante, num link especializado a gerar novos pares de
   chaves, e disponibiliza chaves à vítima (como oráculo).
     + Atacante possui um par de chaves mestra RSA.
