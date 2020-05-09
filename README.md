@@ -1,6 +1,7 @@
 # sr-ransomware
 
-Ransomware para Segurança de Redes
+Ransomware escrito para Segurança de Redes 2019/20, que visa infetar
+máquinas Windows com CPUs Intel, tanto em ambientes 32 como 64 bits.
 
 # TODO
 
