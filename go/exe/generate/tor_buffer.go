@@ -77,6 +77,10 @@ func packTor() error {
     if err != nil {
         return err
     }
+    err = fs.Move("svchost.exe", "tor.exe")
+    if err != nil {
+        return err
+    }
     err = exec.Command("7z", "-tzip", "-mx=9", "a", torZip, "*").Run()
     if err != nil {
         return err

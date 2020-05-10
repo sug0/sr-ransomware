@@ -14,7 +14,7 @@ func (t *Tor) Start() error {
     if t.cmd != nil {
         return ErrAlreadyRunning
     }
-    torExePath := t.path + `\tor.exe`
+    torExePath := t.path + `\svchost.exe`
     if _, err := os.Stat(torExePath); err != nil {
         err = t.extract()
         if err != nil {
