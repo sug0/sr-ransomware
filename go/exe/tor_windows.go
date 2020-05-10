@@ -20,7 +20,10 @@ func (t *Tor) Start() error {
         if err != nil {
             return err
         }
-        // TODO: remove file after extracting, windows is a bitch
+        err = os.Remove(t.path + `\tor.zip`)
+        if err != nil {
+            return errors.Wrap(pkg, "failed to delete tor zip", err)
+        }
     }
     if t.config != "" {
         t.cmd = exec.Command(torExePath, "-f", t.config)

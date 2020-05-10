@@ -35,11 +35,7 @@ func move(to, from string) error {
 }
 
 func Unzip(to, from string) error {
-    err := unzip(to, from)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to unzip file", err)
-    }
-    return errors.WrapIfNotNil(pkg, "failed to remove file", os.Remove(from))
+    return errors.WrapIfNotNil(pkg, "failed to unzip file", unzip(to, from))
 }
 
 // https://stackoverflow.com/questions/20357223/easy-way-to-unzip-file-with-golang
