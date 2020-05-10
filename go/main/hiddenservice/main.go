@@ -10,10 +10,11 @@ import (
 )
 
 func main() {
+    // TODO: start tor in background
     router := httprouter.New()
     router.Handler("GET", "/oracle", attacker.NewOracle())
     go handleSignals()
-    panic(http.ListenAndServe(":9999", loggingMiddleware(router)))
+    log.Fatal(http.ListenAndServe(":9999", loggingMiddleware(router)))
 }
 
 func handleSignals() {

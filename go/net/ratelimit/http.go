@@ -23,8 +23,8 @@ func NewHTTPClient(timeout, sleep time.Duration, proxyViaTor bool) http.Client {
                 return NewConn(conn, sleep), nil
             },
             Proxy: getTorProxy(proxyViaTor),
-            Timeout: timeout,
         },
+        Timeout: timeout,
     }
 }
 

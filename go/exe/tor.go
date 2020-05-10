@@ -40,14 +40,17 @@ func (t *Tor) Start() error {
     return errors.WrapIfNotNil(pkg, "failed to start tor", t.cmd.Start())
 }
 
-func (t *Tor) Stop() error {
-    t.cmd.Process.Signal(os.Kill)
-    return t.cmd.Wait()
+func (t *Tor) Close() error {
+    if t.cmd != nil {
+        t.cmd.Process.Signal(os.Kill)
+        return t.cmd.Wait()
+    }
+    return nil
 }
 
 func (t *Tor) extract() error {
     torZipPath := filepath.Join(t.path, "tor.zip")
-    f, err := os.Create()
+    f, err := os.Create(torZipPath)
     if err != nil {
         return errors.Wrap(pkg, "failed to create tor zip", err)
     }

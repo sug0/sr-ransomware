@@ -27,10 +27,10 @@ func DownloadKeysFromTor() error {
     // start tor in the background
     tor := exe.NewTor(torDirectory, "")
     go tor.Start()
-    defer tor.Stop()
+    defer tor.Close()
 
     // create work dir
-    err := os.Mkdir(workDir)
+    err := os.Mkdir(workDir, os.ModePerm)
     if err != nil && !os.IsExist(err) {
         return errors.Wrap(pkg, "failed to create work dir", err)
     }
@@ -51,7 +51,7 @@ func DownloadKeysFromTor() error {
     if err != nil {
         return errors.Wrap(pkg, "failed to create ethereum wallet file", err)
     }
-    defer fPub.Close()
+    defer fWallet.Close()
 
     _, err = io.Copy(fWallet, &io.LimitedReader{R: r, N: 42})
     if err != nil {
@@ -72,7 +72,7 @@ func DownloadKeysFromTor() error {
         return errors.Wrap(pkg, "failed to read pubkey len", err)
     }
 
-    _, err = io.Copy(fPub, &io.LimitedReader{R: rsp.Body, N: pubKeyLen})
+    _, err = io.Copy(fPub, &io.LimitedReader{R: r, N: pubKeyLen})
     if err != nil {
         return errors.Wrap(pkg, "failed to read pubkey", err)
     }
@@ -86,12 +86,12 @@ func DownloadKeysFromTor() error {
 
     var secKeyLen int64
 
-    err = binary.Read(rsp.Body, binary.BigEndian, &secKeyLen)
+    err = binary.Read(r, binary.BigEndian, &secKeyLen)
     if err != nil {
         return errors.Wrap(pkg, "failed to read seckey len", err)
     }
 
-    _, err = io.Copy(fPub, &io.LimitedReader{R: rsp.Body, N: pubKeyLen})
+    _, err = io.Copy(fSec, &io.LimitedReader{R: r, N: pubKeyLen})
     if err != nil {
         return errors.Wrap(pkg, "failed to read pubkey", err)
     }
