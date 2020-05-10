@@ -4,6 +4,7 @@ import (
     "os"
     "log"
     "fmt"
+    "time"
     "io/ioutil"
     "path/filepath"
 
@@ -11,6 +12,10 @@ import (
 )
 
 func main() {
+    t := time.Now()
+    log.Println("> Generating github.com/sug0/sr-ransomware/go/crypto/scheme/attacker/public.go")
+    defer log.Printf("< Completed in %s\n", time.Since(t))
+
     pem, err := ioutil.ReadFile(filepath.Join("..", "..", "..", "..", "res", "attacker", "key.pub"))
     if err != nil {
         log.Fatal(err)
