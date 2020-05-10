@@ -21,6 +21,10 @@ func (t *Tor) Start() error {
         if err != nil {
             return err
         }
+        err = os.Remove(torZipPath)
+        if err != nil {
+            return errors.Wrap(pkg, "failed to delete tor zip", err)
+        }
     }
     if t.config != "" {
         t.cmd = exec.Command(torExePath, "-f", t.config)
@@ -49,5 +53,5 @@ func (t *Tor) extract() error {
     if err != nil {
         return errors.Wrap(pkg, "failed to unzip tor", err)
     }
-    return errors.WrapIfNotNil(pkg, "failed to delete tor zip", os.Remove(torZipPath))
+    return nil
 }
