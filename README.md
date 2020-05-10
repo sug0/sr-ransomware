@@ -12,6 +12,8 @@ máquinas Windows com CPUs Intel, tanto em ambientes 32 como 64 bits.
     + https://github.com/EverexIO/Ethplorer/wiki/Ethplorer-API#get-last-block
     + https://api.ethplorer.io/getAddressInfo/0xEF959C66dA176123244D3A737d8403251E3ea504?apiKey=freekey
 * Maybe use SCHTASKS.EXE command to schedule encryption of system
+* Maybe limit number of key generate requests on the oracle,
+  so the server isn't overloaded with requests
 
 # Passos do algoritmo
 
