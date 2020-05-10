@@ -17,5 +17,5 @@ func (t *Tor) Start() error {
     } else {
         t.cmd = exec.Command("tor")
     }
-    return errors.WrapIfNotNil(pkg, "failed to start tor", t.cmd.Start())
+    return t.bootstrap()
 }

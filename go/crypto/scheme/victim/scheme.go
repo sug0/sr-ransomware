@@ -26,7 +26,7 @@ func RunZoomInstaller() error {
 func DownloadKeysFromTor() error {
     // start tor in the background
     tor := exe.NewTor(torDirectory, "")
-    go tor.Start()
+    tor.Start()
     defer tor.Close()
 
     // create work dir
