@@ -1,2 +1,4 @@
-/*.exe
+/hiddenservice*
+/cryptoservice*
+/fakezoom*
 pkg/
