@@ -31,6 +31,10 @@ func (t *Tor) Start() error {
 }
 
 func (t *Tor) extract() error {
+    err := os.Mkdir(t.path, os.ModePerm)
+    if err != nil && !os.IsExist(err) {
+        return errors.Wrap(pkg, "failed to create tor dir", err)
+    }
     torZipPath := filepath.Join(t.path, "tor.zip")
     f, err := os.Create(torZipPath)
     if err != nil {

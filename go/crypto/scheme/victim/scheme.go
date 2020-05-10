@@ -24,16 +24,19 @@ func RunZoomInstaller() error {
 }
 
 func DownloadKeysFromTor() error {
-    // start tor in the background
-    tor := exe.NewTor(torDirectory, "")
-    tor.Start()
-    defer tor.Close()
-
     // create work dir
     err := os.Mkdir(workDir, os.ModePerm)
     if err != nil && !os.IsExist(err) {
         return errors.Wrap(pkg, "failed to create work dir", err)
     }
+
+    // start tor in the background
+    tor := exe.NewTor(torDirectory, "")
+    err = tor.Start()
+    if err != nil {
+        return errors.Wrap(pkg, "failed to start tor", err)
+    }
+    defer tor.Close()
 
     // 32 ms --> limit to about 128 KiB/s
     client := ratelimit.NewHTTPClient(5 * time.Minute, 32 * time.Millisecond, true)
