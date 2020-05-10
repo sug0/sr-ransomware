@@ -11,6 +11,12 @@ import (
 )
 
 func main() {
+    go setup()
+    <-signalListener()
+    log.Println("Exiting")
+}
+
+func setup() {
     // start tor in the background
     tor := exe.NewTor("", os.Getenv("FLUTORRC"))
 
@@ -26,13 +32,8 @@ func main() {
     router.Handler("GET", "/oracle", attacker.NewOracle())
 
     // start server
-    log.Println("Starting server")
-    go func(){
-        log.Fatal(http.ListenAndServe(":9999", loggingMiddleware(router)))
-    }()
-
-    <-signalListener()
-    log.Println("Exiting")
+    log.Println("Listening on localhost at :9999 and :80 on the hidden service")
+    log.Fatal(http.ListenAndServe(":9999", loggingMiddleware(router)))
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
