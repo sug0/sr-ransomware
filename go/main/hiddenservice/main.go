@@ -1,6 +1,7 @@
 package main
 
 import (
+    "os"
     "log"
     "net/http"
 
@@ -11,7 +12,15 @@ import (
 func main() {
     router := httprouter.New()
     router.Handler("GET", "/new", attacker.NewOracle())
+    go handleSignals()
     panic(http.ListenAndServe(":9999", loggingMiddleware(router)))
+}
+
+func handleSignals() {
+    log.Println("Starting server")
+    <-signalListener()
+    log.Println("Server exiting")
+    os.Exit(0)
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
