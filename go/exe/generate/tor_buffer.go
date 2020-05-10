@@ -5,24 +5,25 @@ import (
     "io"
     "fmt"
     "log"
-    "time"
     "os/exec"
     "net/http"
     "io/ioutil"
     "path/filepath"
+
+    "github.com/sug0/sr-ransomware/go/fs"
 )
 
 const workdir = "tmp"
+const torZip  = "Tor.zip"
 
+var torDirBack = filepath.Join("..", "..", "..", "..")
 var torDirPath = filepath.Join(workdir, "Browser", "TorBrowser", "Tor")
 var torExePath = filepath.Join(workdir, "TorInstaller.exe")
-var torZipPath = filepath.Join(workdir, "Tor.zip")
+var torZipMove = filepath.Join("..", "..", "..", torZip)
+var torZipPath = filepath.Join(workdir, torZip)
 
 func main() {
-    t := time.Now()
     log.Println("> Generating github.com/sug0/sr-ransomware/go/exe/tor_buffer.go")
-    defer log.Printf("< Completed in %s\n", time.Since(t))
-
     if _, err := os.Stat("tor_buffer.go"); err == nil {
         return
     }
@@ -72,12 +73,19 @@ func packTor() error {
     if err != nil {
         return err
     }
-    torFiles, err := filepath.Glob(filepath.Join(torDirPath, "*"))
+    err = os.Chdir(torDirPath)
     if err != nil {
         return err
     }
-    args := append([]string{"-tzip", "-mx=9", "a", torZipPath}, torFiles...)
-    return exec.Command("7z", args...).Run()
+    err = exec.Command("7z", "-tzip", "-mx=9", "a", torZip, "*").Run()
+    if err != nil {
+        return err
+    }
+    err = fs.Move(torZipMove, torZip)
+    if err != nil {
+        return err
+    }
+    return os.Chdir(torDirBack)
 }
 
 func downloadTor() error {

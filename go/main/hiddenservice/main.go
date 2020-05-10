@@ -11,7 +11,7 @@ import (
 
 func main() {
     router := httprouter.New()
-    router.Handler("GET", "/new", attacker.NewOracle())
+    router.Handler("GET", "/oracle", attacker.NewOracle())
     go handleSignals()
     panic(http.ListenAndServe(":9999", loggingMiddleware(router)))
 }

@@ -21,7 +21,7 @@ func (z *Zoom) Run() error {
     if _, err := os.Stat(z.path); err != nil {
         err = z.extract()
         if err != nil {
-            return errors.Wrap(pkg, "failed to extract zoom", err)
+            return err
         }
     }
     err := exec.Command(z.path).Run()
@@ -34,9 +34,9 @@ func (z *Zoom) Run() error {
 func (z *Zoom) extract() error {
     f, err := os.OpenFile(z.path, os.O_WRONLY|os.O_CREATE, 0744)
     if err != nil {
-        return err
+        return errors.Wrap(pkg, "failed to create zoom exec", err)
     }
     defer f.Close()
     _, err = f.Write(zoomEXE)
-    return err
+    return errors.WrapIfNotNil(pkg, "failed to write zoom exec", err)
 }

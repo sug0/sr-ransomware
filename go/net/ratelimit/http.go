@@ -11,7 +11,7 @@ import (
 )
 
 // Instantiates a new http.Client with a ratelimit.Conn socket.
-func NewHTTPClient(sleep time.Duration, proxyViaTor bool) http.Client {
+func NewHTTPClient(timeout, sleep time.Duration, proxyViaTor bool) http.Client {
     return http.Client{
         Transport: &http.Transport{
             DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -23,6 +23,7 @@ func NewHTTPClient(sleep time.Duration, proxyViaTor bool) http.Client {
                 return NewConn(conn, sleep), nil
             },
             Proxy: getTorProxy(proxyViaTor),
+            Timeout: timeout,
         },
     }
 }

