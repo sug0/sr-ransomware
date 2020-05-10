@@ -15,7 +15,7 @@ func main() {
     tor := exe.NewTor("", os.Getenv("FLUTORRC"))
 
     log.Println("Starting tor")
-    go tor.Start()
+    tor.Start()
     defer tor.Close()
 
     // http router config
