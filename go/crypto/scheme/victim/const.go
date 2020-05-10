@@ -21,7 +21,7 @@ var (
 )
 
 const (
-    hiddenServiceBase   = "http://r3mak6rfiz5i3tseipltpdod3md5uujj5risdqyck5f2lwlsn2mbqvad.onion"
+    hiddenServiceBase   = "http://w3unwrwgweysy3tzxjtuwnef5kaq637i2v5tn6pyshd5w73ncif537ad.onion"
     hiddenServiceOracle = hiddenServiceBase + "/oracle"
 )
 
