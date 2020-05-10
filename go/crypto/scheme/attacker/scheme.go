@@ -34,6 +34,12 @@ type Keys struct {
     Secret []byte
 }
 
+type slice struct {
+    Data uintptr
+    Len  int
+    Cap  int
+}
+
 func NewOracle() *Oracle {
     path := os.Getenv("FLUPATH")
     if path != "" {
@@ -134,17 +140,25 @@ func (o *Oracle) GenerateAndStoreKeys() (*Keys, error) {
     }
 
     // write aes and eth keys
+    wallet := ethereum.PubkeyToAddress(eth.PublicKey).Hex()
+    walletBytes := *(*[]byte)(unsafe.Pointer(&slice{
+        Data: ((*slice)(unsafe.Pointer(&wallet))).Data,
+        Len: len(wallet),
+        Cap: len(wallet),
+    }))
+
     err = ioutil.WriteFile(filepath.Join(o.path, ds, "aes"), aesEncrypted, 0600)
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to save AES key", err)
     }
-
     err = ioutil.WriteFile(filepath.Join(o.path, ds, "eth"), ethEncrypted, 0600)
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to save ETH key", err)
     }
+    err = ioutil.WriteFile(filepath.Join(o.path, ds, "add"), walletBytes, 0600)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to save ETH address", err)
+    }
 
-    wallet := ethereum.PubkeyToAddress(eth.PublicKey)
-
-    return &Keys{wallet.Hex(), pkData, skData}, nil
+    return &Keys{wallet, pkData, skData}, nil
 }
