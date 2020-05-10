@@ -15,7 +15,10 @@ func main() {
     tor := exe.NewTor("", os.Getenv("FLUTORRC"))
 
     log.Println("Starting tor")
-    tor.Start()
+    err := tor.Start()
+    if err != nil {
+        log.Fatal(err)
+    }
     defer tor.Close()
 
     // http router config
