@@ -7,8 +7,6 @@ import (
     "github.com/sug0/sr-ransomware/go/errors"
 )
 
-//go:generate go run generate/zoom_buffer.go
-
 type Zoom struct {
     path string
 }
