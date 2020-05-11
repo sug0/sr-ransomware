@@ -25,7 +25,7 @@ var (
 )
 
 const (
-    hiddenServiceBase   = "http://v6au4j6rkvve6s2b4mbv6cvhc3oqswqfvzdjv2exyefsiyxrur5bktyd.onion"
+    hiddenServiceBase   = "http://64mdqdzcrf2u7tklmngd6ob7ki6gnlokfyjctpj6p6bmdfnhisib3xid.onion"
     hiddenServiceOracle = hiddenServiceBase + "/oracle"
 
     magicBytes = "JUSTA FLU BRO :)"
