@@ -99,20 +99,19 @@ func (s *Scheme) VerifyPaymentsBackground() {
         dir.Close()
         for i := 0; i < len(ents); i++ {
             pubkey := ents[i].Name()
+            clr, err := fileutil.LockFile(filepath.Join(s.path, pubkey, "clr"), os.O_CREATE|os.O_WRONLY, 0600)
+            if err != nil {
+                continue
+            }
+            if stat, _ := clr.Stat(); stat != nil && stat.Size() != 0 {
+                clr.Close()
+                continue
+            }
             if s.localVerifyPayment(pubkey) {
-                clr, err := fileutil.LockFile(filepath.Join(s.path, pubkey, "clr"), os.O_CREATE|os.O_WRONLY, 0600)
-                if err != nil {
-                    goto next_verify
-                }
-                if stat, _ := clr.Stat(); stat != nil && stat.Size() != 0 {
-                    clr.Close()
-                    goto next_verify
-                }
                 clr.Write([]byte("1"))
                 clr.Close()
+                time.Sleep(420 * time.Millisecond)
             }
-        next_verify:
-            time.Sleep(420 * time.Millisecond)
         }
     next_cycle:
         time.Sleep(10 * time.Minute)
