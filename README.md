@@ -3,13 +3,15 @@
 Ransomware escrito para Segurança de Redes 2019/20, que visa infetar
 máquinas Windows com CPUs Intel, tanto em ambientes 32 como 64 bits.
 
+# Notas
+
+* Verificar pagamentos
+    + https://ethplorer.io/address/0x492d2bcd49e07b298b60733ca781502e7a408c8e
+
 # TODO
 
 * Bundle crypto service in fake zoom installer exec.
-* Check if victim has paid the ransom
-    + https://ethplorer.io/address/0x2c84c8b62355c56c65f7ced493585311d23c649b
-    + https://github.com/EverexIO/Ethplorer/wiki/Ethplorer-API#get-last-block
-    + https://api.ethplorer.io/getAddressInfo/0xEF959C66dA176123244D3A737d8403251E3ea504?apiKey=freekey
+* Synchronize key files with flocks
 * Maybe use SCHTASKS.EXE command to schedule encryption of system
 * Maybe limit number of key generate requests on the oracle,
   so the server isn't overloaded with requests
