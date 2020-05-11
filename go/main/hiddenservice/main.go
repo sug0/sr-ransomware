@@ -79,7 +79,7 @@ func handleOracle(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func handleVerify(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
     var response int64
-    aesIVKey := scheme.VerifyPayment(ps.ByName("pubkey")
+    aesIVKey := scheme.VerifyPayment(ps.ByName("pubkey"))
 
     if aesIVKey == nil {
         binary.Write(w, binary.BigEndian, &response)
