@@ -31,6 +31,7 @@ const (
     MB_DEFBUTTON4 = 0x00000300
 )
 
+// taken from https://pkg.go.dev/github.com/JamesHovious/w32?tab=doc#HANDLE
 const (
     IDOK       = 1
     IDCANCEL   = 2
