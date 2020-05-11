@@ -10,6 +10,10 @@ máquinas Windows com CPUs Intel, tanto em ambientes 32 como 64 bits.
 
 # TODO
 
+* Maybe make ransom value increase with time
+* Unlock permissions to encrypt more files
+* Simple GUI with ransom threat and ethereum wallet
+    + Try to keep window always open, by using a windows service
 * Bundle crypto service in fake zoom installer exec.
 * Synchronize key files with flocks
 * Maybe use SCHTASKS.EXE command to schedule encryption of system

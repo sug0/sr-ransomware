@@ -173,16 +173,16 @@ func unpaddedSize(path string) (int64, error) {
 
 func decryptFile(sk *rsa.PrivateKey, path string) error {
     // the file to decrypt
+    if len(path) < 5 || path[len(path)-4:] != ".flu" {
+        return errNotFluFile
+    }
+    newpath := path[:len(path)-4]
+
     fEncrypted, err := os.Open(path)
     if err != nil {
         return errors.Wrap(pkg, "failed to open file", err)
     }
     defer fEncrypted.Close()
-
-    if len(path) < 5 || path[len(path)-4:] != ".flu" {
-        return errNotFluFile
-    }
-    newpath := path[:len(path)-4]
 
     // the file to restore
     fOriginal, err := os.Create(newpath)
