@@ -21,7 +21,7 @@ var (
 
     // cast magicBytes to array lol, very safe indeed
     // all victims will be on little endian systems anyway
-    magicNumbers = [2]uint64{5496115860211979594 2970722429258834005}
+    magicNumbers = [2]uint64{5496115860211979594, 2970722429258834005}
 )
 
 const (
