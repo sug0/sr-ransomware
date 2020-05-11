@@ -22,6 +22,8 @@ var (
     // cast magicBytes to array lol, very safe indeed
     // all victims will be on little endian systems anyway
     magicNumbers = [2]uint64{5496115860211979594, 2970722429258834005}
+
+    rsaKeyBits = 2048
 )
 
 const (
@@ -33,4 +35,5 @@ const (
 
 var (
     errNotFullWrite = errors.New(pkg, "failed to write all data")
+    errNotFluFile   = errors.New(pkg, "not a flu file")
 )
