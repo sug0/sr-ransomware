@@ -219,8 +219,11 @@ func decryptFile(sk *rsa.PrivateKey, path string) error {
     // decrypt file
     stream := cipher.StreamWriter{S: aesStream, W: w}
     _, err = io.Copy(stream, r)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to decrypt file data", err)
+    }
 
-    return errors.WrapIfNotNil(pkg, "failed to decrypt file data", err)
+    return errors.WrapIfNotNil(pkg, "failed to flush buffer", w.Flush())
 }
 
 func invalidMagic(m []byte) bool {
