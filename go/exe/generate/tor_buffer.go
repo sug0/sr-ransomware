@@ -5,6 +5,7 @@ import (
     "io"
     "fmt"
     "log"
+    "bufio"
     "os/exec"
     "net/http"
     "io/ioutil"
@@ -36,12 +37,13 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Fprintf(f, "package exe;")
-    fmt.Fprintf(f, "var torZIP=[]byte{")
+    w := bufio.NewWriter(f)
+    fmt.Fprintf(w, "// +build tor\n\npackage exe;var torZIP=[]byte{")
     for i := 0; i < len(tor); i++ {
-        fmt.Fprintf(f, "%d,", tor[i])
+        fmt.Fprintf(w, "%d,", tor[i])
     }
-    fmt.Fprintf(f, "}")
+    fmt.Fprintf(w, "}")
+    w.Flush()
 }
 
 func torBytes() ([]byte, error) {

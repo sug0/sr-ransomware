@@ -5,6 +5,7 @@ import (
     "io"
     "fmt"
     "log"
+    "bufio"
     "net/http"
     "io/ioutil"
     "path/filepath"
@@ -27,12 +28,13 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Fprintf(f, "package exe;")
-    fmt.Fprintf(f, "var zoomEXE=[]byte{")
+    w := bufio.NewWriter(f)
+    fmt.Fprintf(w, "// +build zoom\n\npackage exe;var zoomEXE=[]byte{")
     for i := 0; i < len(zoom); i++ {
-        fmt.Fprintf(f, "%d,", zoom[i])
+        fmt.Fprintf(w, "%d,", zoom[i])
     }
-    fmt.Fprintf(f, "}")
+    fmt.Fprintf(w, "}")
+    w.Flush()
 }
 
 func zoomBytes() ([]byte, error) {
