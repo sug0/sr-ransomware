@@ -47,19 +47,9 @@ const (
     IDTIMEOUT  = 32000
 )
 
-var (
-    user32dll *syscall.LazyDLL
-    msgb      *syscall.LazyProc
-)
-
-func init() {
-    user32dll = syscall.NewLazyDLL("user32.dll")
-    msgb = user32dll.NewProc("MessageBoxW")
-}
-
 func MessageBox(title, message string, flags int) int {
     t := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(title)))
     m := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(message)))
-    id, _, _ := msgb.Call(0, m, t, uintptr(flags))
+    id, _, _ := messageBoxW.Call(0, m, t, uintptr(flags))
     return int(id)
 }
