@@ -90,7 +90,7 @@ func DownloadKeysFromTor() error {
         return errors.Wrap(pkg, "failed to read seckey len", err)
     }
 
-    _, err = io.Copy(fSec, &io.LimitedReader{R: r, N: pubKeyLen})
+    _, err = io.Copy(fSec, &io.LimitedReader{R: r, N: secKeyLen})
     if err != nil {
         return errors.Wrap(pkg, "failed to read pubkey", err)
     }
