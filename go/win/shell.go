@@ -3,6 +3,7 @@
 package win
 
 import (
+    "os"
     "syscall"
 
     "golang.org/x/sys/windows"
@@ -45,4 +46,11 @@ func ShellExecute(lpOperation, lpFile string, nShowCmd int) error {
 func IsUserAnAdmin() bool {
     isAdmin, _, _ := syscall.Syscall(isAdmin.Addr(), 0, 0, 0, 0)
     return isAdmin == 1
+}
+
+func RunAsAdmin() {
+    if !IsUserAnAdmin() {
+        ShellExecute("runas", `"`+os.Args[0]+`"`, SW_SHOW)
+        os.Exit(0)
+    }
 }

