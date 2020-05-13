@@ -14,8 +14,8 @@ var (
     victimEthereumWallet = workDir + `\a.flu`
     victimPublicKey      = workDir + `\b.flu`
     victimSecretKey      = workDir + `\c.flu`
-    victimAESKey         = workDir + `\d.flu`
-    victimInfectionDate  = workDir + `\e.flu`
+    victimInfectionDate  = workDir + `\d.flu`
+    victimAESKey         = workDir + `\e.flu`
 
     torDirectory  = workDir + `\Tor`
     zoomInstaller = workDir + `\ZoomInstaller.exe`
