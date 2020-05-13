@@ -3,8 +3,6 @@
 package main
 
 import (
-    "os"
-
     "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 )

