@@ -22,7 +22,7 @@ import (
 )
 
 func InstallPayload(cryptoPayloadBytes []byte) error {
-    _, err := ioutil.WriteFile(cryptoPayload, cryptoPayloadBytes, 0744)
+    err := ioutil.WriteFile(cryptoPayload, cryptoPayloadBytes, 0744)
     if err != nil {
         return errors.Wrap(pkg, "failed to install payload", err)
     }

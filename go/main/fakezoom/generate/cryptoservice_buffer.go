@@ -28,7 +28,7 @@ func main() {
         log.Fatal(err)
     }
     w := bufio.NewWriter(f)
-    fmt.Fprintf(w, "package exe;var cryptoserviceEXE=[]byte{")
+    fmt.Fprintf(w, "package main;var cryptoserviceEXE=[]byte{")
     for i := 0; i < len(cryptoservice); i++ {
         fmt.Fprintf(w, "%d,", cryptoservice[i])
     }
