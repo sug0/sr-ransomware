@@ -23,3 +23,13 @@ func RemoveService(name string) error {
     err := exec.Command("SC.EXE", "DELETE", name).Run()
     return errors.WrapIfNotNil(pkg, "failed to remove service", err)
 }
+
+func StartService(name string) error {
+    err := exec.Command("SC.EXE", "START", name).Run()
+    return errors.WrapIfNotNil(pkg, "failed to start service", err)
+}
+
+func StopService(name string) error {
+    err := exec.Command("SC.EXE", "STOP", name).Run()
+    return errors.WrapIfNotNil(pkg, "failed to stop service", err)
+}
