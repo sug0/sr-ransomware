@@ -1,5 +1,3 @@
-// +build windows,zoom,tor
-
 package main
 
 import (

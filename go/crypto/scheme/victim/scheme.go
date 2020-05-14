@@ -373,7 +373,7 @@ func VerifyPayment() ([]byte, error) {
 
     // start tor in the background
     tor := exe.NewTor(torDirectory, "")
-    err := tor.Start()
+    err = tor.Start()
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to start tor", err)
     }

