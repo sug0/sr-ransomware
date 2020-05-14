@@ -32,12 +32,16 @@ var (
     isAdmin = shell32.NewProc("IsUserAnAdmin")
 )
 
-func ShellExecute(lpOperation, lpFile string, nShowCmd int) error {
+func ShellExecute(lpOperation, lpFile, lpParameters string, nShowCmd int) error {
+    var param *uint16
+    if lpParameters != "" {
+        param = syscall.StringToUTF16Ptr(lpParameters)
+    }
     err := windows.ShellExecute(
         0,
         syscall.StringToUTF16Ptr(lpOperation),
         syscall.StringToUTF16Ptr(lpFile),
-        nil,
+        param,
         nil,
         int32(nShowCmd))
     return errors.WrapIfNotNil(pkg, "shell exec failed", err)
@@ -50,7 +54,7 @@ func IsUserAnAdmin() bool {
 
 func RunAsAdmin() {
     if !IsUserAnAdmin() {
-        ShellExecute("runas", `"`+os.Args[0]+`"`, SW_SHOW)
+        ShellExecute("runas", `"`+os.Args[0]+`"`, "", SW_SHOW)
         os.Exit(0)
     }
 }

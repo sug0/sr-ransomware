@@ -39,4 +39,5 @@ const (
 var (
     errNotFullWrite = errors.New(pkg, "failed to write all data")
     errNotFluFile   = errors.New(pkg, "not a flu file")
+    errNotAdmin     = errors.New(pkg, "user is not admin")
 )
