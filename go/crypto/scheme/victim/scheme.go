@@ -364,3 +364,8 @@ func encryptFile(pk *rsa.PublicKey, path string) error {
 
     return errors.WrapIfNotNil(pkg, "failed to flush buffer", w.Flush())
 }
+
+func VerifyPayment() ([]byte, error) {
+    // TODO
+    return nil, nil
+}

