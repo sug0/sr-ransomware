@@ -53,12 +53,12 @@ func serviceMain() {
 }
 
 func (s *service) Serve(exit <-chan bool) {
-    // for some reason victim hasn't been infected,
-    // or the infection files have been tampered with;
-    // all in all, it's just best to exit
     var err error
     s.date, err = victim.InfectionDate()
     if err != nil {
+        // for some reason victim hasn't been infected,
+        // or the infection files have been tampered with;
+        // all in all, it's just best to exit
         return
     }
 
