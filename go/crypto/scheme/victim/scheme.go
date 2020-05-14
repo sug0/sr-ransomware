@@ -395,14 +395,15 @@ func VerifyPayment() ([]byte, error) {
         return nil, errors.Wrap(pkg, "failed to read response", err)
     }
 
-    if response == 0 {
+    switch response {
+    default:
         return nil, errNotPaid
+    case 1:
+        aesIVKey := make([]byte, 32)
+        _, err = io.ReadFull(r, aesIVKey)
+        if err != nil {
+            return nil, errors.Wrap(pkg, "failed to read key", err)
+        }
+        return aesIVKey, nil
     }
-
-    aesIVKey := make([]byte, 32)
-    _, err = io.ReadFull(r, aesIVKey)
-    if err != nil {
-        return nil, errors.Wrap(pkg, "failed to read key", err)
-    }
-    return aesIVKey, nil
 }
