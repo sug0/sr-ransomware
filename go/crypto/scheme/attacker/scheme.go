@@ -1,7 +1,6 @@
 package attacker
 
 import (
-    "io"
     "os"
     "time"
     "bufio"
