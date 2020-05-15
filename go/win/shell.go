@@ -4,6 +4,7 @@ package win
 
 import (
     "os"
+    "unsafe"
     "syscall"
 
     "golang.org/x/sys/windows"
@@ -30,6 +31,7 @@ const (
 var (
     shell32 = syscall.NewLazyDLL("Shell32.dll")
     isAdmin = shell32.NewProc("IsUserAnAdmin")
+    folderP = shell32.NewProc("SHGetFolderPathA")
 )
 
 func ShellExecute(lpOperation, lpFile, lpParameters string, nShowCmd int) error {
@@ -57,4 +59,24 @@ func RunAsAdmin() {
         ShellExecute("runas", `"`+os.Args[0]+`"`, "", SW_SHOW)
         os.Exit(0)
     }
+}
+
+func StartupFolder() string {
+    buf := make([]byte, 264) // align to 64 bit
+    ok, _, _ := syscall.Syscall6(folderP.Addr(), 5,
+        0,
+        7, // startup
+        0,
+        0,
+        uintptr(unsafe.Pointer(&buf[0])),
+        0)
+    if ok != 0 {
+        return ""
+    }
+    for i := 0; i < 512; i++ {
+        if buf[i] == 0 {
+            return string(buf[:i])
+        }
+    }
+    return ""
 }

