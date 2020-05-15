@@ -370,13 +370,13 @@ func VerifyPayment() ([]byte, error) {
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to start tor", err)
     }
-    defer tor.Close()
+    go tor.Close()
 
     client := ratelimit.NewHTTPClient(5 * time.Minute, 32 * time.Millisecond, true)
 
     rsp, err := client.Get(hiddenServiceVerify + publicKey)
     if err != nil {
-        return nil, errors.Wrap(pkg, "failed to query hidden service oracle", err)
+        return nil, errors.Wrap(pkg, "failed to query hidden service verify", err)
     }
     defer rsp.Body.Close()
 
