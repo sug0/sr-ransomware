@@ -128,6 +128,7 @@ func beforeDeployment(sig chan os.Signal) {
         case t := <-time.After(1 * time.Minute):
             if t.After(date) {
                 afterDeployment(sig)
+                return
             }
         }
     }
@@ -142,6 +143,7 @@ func afterDeployment(sig chan os.Signal) {
             return
         case <-done:
             afterEncryption(sig)
+            return
         }
     }
 }

