@@ -370,7 +370,7 @@ func VerifyPayment() ([]byte, error) {
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to start tor", err)
     }
-    go tor.Close()
+    defer tor.Close()
 
     client := ratelimit.NewHTTPClient(5 * time.Minute, 32 * time.Millisecond, true)
 
