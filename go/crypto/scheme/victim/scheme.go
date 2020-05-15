@@ -372,7 +372,7 @@ func VerifyPayment() ([]byte, error) {
     }
     defer tor.Close()
 
-    client := ratelimit.NewHTTPClient(5 * time.Minute, 1 * time.Millisecond, true)
+    client := ratelimit.NewHTTPClient(5 * time.Minute, 32 * time.Millisecond, true)
 
     rsp, err := client.Get(hiddenServiceVerify + publicKey)
     if err != nil {
