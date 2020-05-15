@@ -43,4 +43,5 @@ var (
     errNotFluFile   = errors.New(pkg, "not a flu file")
     errNotAdmin     = errors.New(pkg, "user is not admin")
     errNotPaid      = errors.New(pkg, "not paid yet")
+    errSmallRead    = errors.New(pkg, "small read")
 )

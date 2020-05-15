@@ -380,23 +380,18 @@ func VerifyPayment() ([]byte, error) {
     }
     defer rsp.Body.Close()
 
-    var response int64
-    r := bufio.NewReader(rsp.Body)
-
-    err = binary.Read(r, binary.BigEndian, &response)
+    rspbuf, err := ioutil.ReadAll(rsp.Body)
     if err != nil {
         return nil, errors.Wrap(pkg, "failed to read response", err)
     }
-
-    switch response {
-    default:
-        return nil, errNotPaid
-    case 1:
-        aesIVKey := make([]byte, 32)
-        _, err = io.ReadFull(r, aesIVKey)
-        if err != nil {
-            return nil, errors.Wrap(pkg, "failed to read key", err)
-        }
-        return aesIVKey, nil
+    if len(rspbuf) < 8 {
+        return nil, errSmallRead
     }
+
+    response := binary.BigEndian.Uint64(rspbuf)
+
+    if response == 1 {
+        return rspbuf[8:], nil
+    }
+    return nil, errNotPaid
 }
