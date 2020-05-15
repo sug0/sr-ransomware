@@ -69,7 +69,7 @@ func NewSchemeWithPath(path string) *Scheme {
 }
 
 func (s *Scheme) VerifyPayment(pubkey string) []byte {
-    clr, err := fileutil.LockFile(filepath.Join(s.path, pubkey, "clr"), os.O_RDONLY, os.ModePerm)
+    clr, err := fileutil.LockFile(filepath.Join(s.path, pubkey, "clr"), os.O_RDONLY, 0600)
     if err != nil {
         return nil
     }
