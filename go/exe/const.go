@@ -9,4 +9,5 @@ const pkg = "github.com/sug0/sr-ransomware/go/exe"
 
 var (
     ErrAlreadyRunning = errors.New(pkg, "already running")
+    ErrTorStartFailed = errors.New(pkg, "failed to start tor")
 )

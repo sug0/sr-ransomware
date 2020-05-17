@@ -2,6 +2,7 @@ package exe
 
 import (
     "os"
+    "time"
     "bufio"
     "os/exec"
     "strings"
@@ -29,11 +30,11 @@ func (t *Tor) Close() error {
 
 func (t *Tor) bootstrap() error {
     r, w, err := os.Pipe()
+    if err != nil {
+        return errors.Wrap(pkg, "failed to create pipe", err)
+    }
     defer w.Close()
     defer r.Close()
-    if err != nil {
-        errors.Wrap(pkg, "failed to create pipe", err)
-    }
     t.cmd.Stdout = w
     err = t.cmd.Start()
     if err != nil {
@@ -50,6 +51,10 @@ func (t *Tor) bootstrap() error {
         }
         close(ch)
     }()
-    <-ch
-    return nil
+    select {
+    case <-ch:
+        return nil
+    case <-time.After(3 * time.Minute):
+        return ErrTorStartFailed
+    }
 }
