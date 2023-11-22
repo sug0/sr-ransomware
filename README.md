@@ -40,7 +40,7 @@ máquinas Windows com CPUs Intel, tanto em ambientes 32 como 64 bits.
     + Atacante possui um par de chaves mestra RSA.
     + Quando chega um novo pedido, gera uma chave AES, e um par de chaves RSA.
     + Cifra a chave privada gerada com a chave AES gerada, e cifra a chave AES
-      com a sua chave privada mestra.
+      com a sua chave pública mestra.
     + Armazena a chave AES e a chave pública localmente.
         - Em alternativa a armazenar a chave pública na íntegra,
           pode simplesmente armazenar um hash da chave.
